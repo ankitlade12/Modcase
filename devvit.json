@@ -1,0 +1,159 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "modcase-v1",
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "ModCase: Check precedent",
+        "description": "Pick a rule/reason and see how the team handled similar past decisions.",
+        "location": [
+          "post",
+          "comment"
+        ],
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/check-precedent"
+      },
+      {
+        "label": "ModCase: Record correction",
+        "description": "Manually store a privacy-conscious precedent record without taking action on Reddit.",
+        "location": [
+          "post",
+          "comment"
+        ],
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/record-correction"
+      },
+      {
+        "label": "ModCase: Sync rules",
+        "description": "Import subreddit rules into the controlled ModCase reason-label map.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/sync-rules"
+      },
+      {
+        "label": "ModCase: Audit snapshot",
+        "description": "Show recent indexed decision buckets for this install.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/audit-snapshot"
+      },
+      {
+        "label": "ModCase: Rule trends",
+        "description": "Show aggregate remove/approve trends by content type and controlled reason.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/rule-trends"
+      },
+      {
+        "label": "ModCase: Rule health",
+        "description": "Summarize settled, leaning, contested, limited, and unknown-reason areas.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/rule-health"
+      },
+      {
+        "label": "ModCase: Contested rules",
+        "description": "Show reason buckets where recent team precedent is split or only weakly leaning.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/contested-rules"
+      },
+      {
+        "label": "ModCase: Second review",
+        "description": "Show ambiguous aggregate buckets that may deserve another moderator read.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/second-review"
+      },
+      {
+        "label": "ModCase: Rule drift",
+        "description": "Show rule areas where recent outcomes differ from older recent outcomes.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/rule-drift"
+      },
+      {
+        "label": "ModCase: Constitution",
+        "description": "Generate a living summary of how this community usually moderates.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/community-constitution"
+      },
+      {
+        "label": "ModCase: Export report",
+        "description": "Show a copyable privacy-conscious aggregate decision report.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/export-report"
+      },
+      {
+        "label": "ModCase: Transparency summary",
+        "description": "Generate a shareable aggregate moderation summary for the community.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/transparency-report"
+      },
+      {
+        "label": "ModCase: Unknown cleanup",
+        "description": "Remap recent Unknown / Unmapped precedent into a controlled reason bucket.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/unknown-cleanup"
+      },
+      {
+        "label": "ModCase: Training mode",
+        "description": "Practice against a past precedent example and reveal the team decision.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/training"
+      },
+      {
+        "label": "ModCase: Settings",
+        "description": "Set retention and lookup-history limits for this subreddit install.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/settings"
+      },
+      {
+        "label": "ModCase: Seed demo data",
+        "description": "Populate this install with demo history for testing and judging.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/seed-demo"
+      },
+      {
+        "label": "ModCase: Debug log count",
+        "description": "Show how many raw ModAction payloads were captured for verification.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/show-debug-log-count"
+      }
+    ]
+  },
+  "forms": {
+    "modcaseReasonPicker": "/internal/form/reason-picker-submit",
+    "modcaseManualCorrectionForm": "/internal/form/manual-correction-submit",
+    "modcaseSettingsForm": "/internal/form/settings-submit",
+    "modcaseUnknownCleanupForm": "/internal/form/unknown-cleanup-submit",
+    "modcaseTrainingForm": "/internal/form/training-submit",
+    "modcaseSummaryAck": "/internal/form/summary-ack"
+  },
+  "triggers": {
+    "onModAction": "/internal/triggers/on-mod-action"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "permissions": {
+    "reddit": true,
+    "redis": true
+  },
+  "dev": {
+    "subreddit": "modcase_v1_dev"
+  }
+}

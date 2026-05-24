@@ -1,0 +1,38 @@
+{
+  "name": "modcase-v1",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Devvit Web app for moderator precedent lookup from human moderation decisions.",
+  "type": "module",
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "devvit playtest",
+    "watch": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "verify:config": "node scripts/verify-devvit-config.mjs",
+    "lint": "npm run verify:config && npm run typecheck",
+    "check": "npm run lint && npm run test",
+    "dev:devvit": "devvit playtest",
+    "devvit:playtest": "devvit playtest",
+    "devvit:upload": "devvit upload"
+  },
+  "dependencies": {
+    "@devvit/redis": "0.12.24",
+    "@devvit/web": "0.12.24",
+    "hono": "^4.12.14"
+  },
+  "devDependencies": {
+    "@devvit/start": "0.12.24",
+    "@types/node": "^22.15.0",
+    "devvit": "0.12.24",
+    "typescript": "^5.9.3",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
+  },
+  "license": "BSD-3-Clause"
+}

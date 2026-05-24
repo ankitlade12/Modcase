@@ -1,0 +1,32 @@
+# ModCase local/runtime artifacts
+dist/
+node_modules/
+.devvit/
+.vite/
+coverage/
+tmp/
+tmp_screenshots/
+*.tsbuildinfo
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS/editor noise
+.DS_Store
+._*
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Test/build caches
+.cache/
+.vitest/
