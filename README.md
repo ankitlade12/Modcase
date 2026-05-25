@@ -22,9 +22,9 @@ In a test subreddit:
 
 1. Open subreddit menu -> `ModCase: Seed demo data`.
 2. Open a post or comment -> `ModCase: Check precedent`.
-3. Pick a reason and verify the precedent summary. If the menu payload includes current text, examples are keyword-assisted within the same deterministic bucket.
+3. Pick a reason and verify the precedent summary. If the menu payload includes current text, examples are keyword-assisted within the same deterministic bucket. The panel leads with the settled/leaning/contested verdict.
 4. Perform a real approve/remove action and inspect Devvit logs for the raw payload shape.
-5. Optional: use subreddit menu -> `ModCase: Audit snapshot`, `Rule health`, `Rule trends`, `Contested rules`, `Second review`, `Rule drift`, `Constitution`, `Export report`, `Transparency summary`, `Unknown cleanup`, `Training mode`, `Settings`, or `Sync rules`.
+5. Optional: open subreddit menu -> `ModCase: Team insights` and pick a report (rule health, rule trends, contested rules, second review, rule drift, community constitution, transparency summary, audit snapshot, export report). Other subreddit items: `ModCase: Sync rules`, `Unknown cleanup`, `Training mode`, and `Settings`.
 
 ## Read First
 
