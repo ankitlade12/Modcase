@@ -71,3 +71,9 @@ The consistency digest reports how often recent decisions went against the team'
 Status: active
 
 ModCase can optionally pre-select a likely reason label in the precedent picker from the current item's text. This is off by default, keyword-based (a transparent heuristic, not an AI classifier), and suggestion-only: the moderator always confirms or changes the reason, and ModCase still takes no enforcement action. Keeping it opt-in preserves the default posture that the moderator chooses the reason and ModCase only surfaces precedent.
+
+## D-013: Cross-community comparison uses exported profiles, not a shared backend
+
+Status: active
+
+Devvit storage is per-install, so ModCase has no shared cross-subreddit database. Cross-community comparison is therefore opt-in and transport-free: a subreddit exports an aggregate, anonymized "community profile" (per reason/content-type bucket counts and majority action, only for buckets with at least five decisions) that another moderator pastes in to compare norms. Profiles carry no usernames, moderator identities, raw content, or target ids, and the minimum-sample floor keeps tiny buckets out (k-anonymity on bucket size).
