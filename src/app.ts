@@ -468,7 +468,7 @@ function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[]): s
     'ModCase consistency digest',
     `Subreddit: r/${subreddit}`,
     '',
-    `Recent decisions that went against settled or leaning precedent: ${totalDivergent} of ${totalDecisions}.`,
+    `Recent decisions that went against settled or leaning precedent: ${totalDivergent} of ${totalDecisions} across all reason and content-type buckets.`,
     'A decision is counted when, at the time it was made, the team already leaned the other way for that reason and content type.',
     '',
     rows.length
