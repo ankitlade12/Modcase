@@ -6,11 +6,14 @@ import type { ReasonLabel } from './reasons.js';
 export const DEMO_SEED_PREFIX = 'demo';
 
 const DEMO_ITEMS = [
+  // Newest harassment decision is an approval that lands after a settled "removed" majority,
+  // so the consistency digest has one real against-precedent case to surface in demos.
+  // Action counts are unchanged (6 removed, 2 approved), so seeded bucket totals stay the same.
+  ['harassment_abuse', 'comment', 'approved', 'Sharp disagreement, but not personal abuse.'],
   ['harassment_abuse', 'comment', 'removed', 'Personal attack against another user.'],
   ['harassment_abuse', 'comment', 'removed', 'Insult-heavy reply in a heated thread.'],
   ['harassment_abuse', 'comment', 'removed', 'Direct abuse with no substantive argument.'],
   ['harassment_abuse', 'comment', 'removed', 'Hostile comment targeting a person.'],
-  ['harassment_abuse', 'comment', 'approved', 'Sharp disagreement, but not personal abuse.'],
   ['harassment_abuse', 'comment', 'removed', 'Repeated name-calling.'],
   ['harassment_abuse', 'comment', 'removed', 'Threatening or intimidating language.'],
   ['harassment_abuse', 'comment', 'approved', 'Borderline but within heated discussion norms.'],

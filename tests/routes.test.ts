@@ -675,4 +675,10 @@ describe('Devvit route behavior', () => {
     expect(digest.showForm.form.fields[0].defaultValue).toContain('ModCase consistency digest');
     expect(digest.showForm.form.fields[0].defaultValue).toContain('comment / Harassment / Abuse: 1 against-precedent of 6');
   });
+
+  it('surfaces one demo divergence in the consistency digest', async () => {
+    await postJson('/internal/menu/seed-demo', { subredditName: 'r/Example' });
+    const digest = await postJson('/internal/form/insights-submit', { report: ['consistency::modcasectx::example'] });
+    expect(digest.showForm.form.fields[0].defaultValue).toContain('comment / Harassment / Abuse: 1 against-precedent of 8');
+  });
 });
