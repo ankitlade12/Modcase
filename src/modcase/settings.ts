@@ -4,6 +4,7 @@ export const DEFAULT_DECISION_RETENTION_DAYS = 180;
 export const DEFAULT_SETTINGS: ModCaseSettings = {
   decisionRetentionDays: DEFAULT_DECISION_RETENTION_DAYS,
   lookupLimit: 50,
+  reasonSuggestionEnabled: false,
   updatedAt: 0,
 };
 
@@ -29,6 +30,7 @@ export function normalizeSettings(input: unknown, now = Date.now()): ModCaseSett
   return {
     decisionRetentionDays: coerceAllowed(candidate.decisionRetentionDays, RETENTION_DAY_OPTIONS, DEFAULT_SETTINGS.decisionRetentionDays),
     lookupLimit: coerceAllowed(candidate.lookupLimit, LOOKUP_LIMIT_OPTIONS, DEFAULT_SETTINGS.lookupLimit),
+    reasonSuggestionEnabled: candidate.reasonSuggestionEnabled === true,
     updatedAt: normalizeNumber(candidate.updatedAt) ?? now,
   };
 }

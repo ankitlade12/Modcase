@@ -38,5 +38,6 @@ export type DecisionSummary = {
 export type ModCaseSettings = {
   decisionRetentionDays: number;
   lookupLimit: number;
+  reasonSuggestionEnabled: boolean;
   updatedAt: number;
 };

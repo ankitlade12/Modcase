@@ -164,7 +164,7 @@ describe('Devvit route behavior', () => {
       lookupLimit: ['25'],
     });
 
-    expect(saveResult.showToast).toBe('ModCase settings saved: 90d retention, 25 lookup cap.');
+    expect(saveResult.showToast).toBe('ModCase settings saved: 90d retention, 25 lookup cap, reason suggestions off.');
     expect(JSON.parse(strings.get(settingsKey('example')) ?? '{}')).toMatchObject({
       decisionRetentionDays: 90,
       lookupLimit: 25,
@@ -680,5 +680,22 @@ describe('Devvit route behavior', () => {
     await postJson('/internal/menu/seed-demo', { subredditName: 'r/Example' });
     const digest = await postJson('/internal/form/insights-submit', { report: ['consistency::modcasectx::example'] });
     expect(digest.showForm.form.fields[0].defaultValue).toContain('comment / Harassment / Abuse: 1 against-precedent of 8');
+  });
+
+  it('suggests a reason from text only when the opt-in setting is enabled', async () => {
+    const spammyMenu = {
+      postId: 't3_spam',
+      subredditName: 'r/Example',
+      post: { title: 'Buy now! Huge discount, promo code at https://mysite.com' },
+    };
+
+    const offResult = await postJson('/internal/menu/check-precedent', spammyMenu);
+    expect(offResult.showForm.form.fields[0].defaultValue[0]).toContain('harassment_abuse');
+
+    strings.set(settingsKey('example'), JSON.stringify({ decisionRetentionDays: 180, lookupLimit: 50, reasonSuggestionEnabled: true, updatedAt: 1 }));
+
+    const onResult = await postJson('/internal/menu/check-precedent', spammyMenu);
+    expect(onResult.showForm.form.fields[0].defaultValue[0]).toContain('spam_promotional');
+    expect(onResult.showForm.form.description).toContain('Spam / Promotional');
   });
 });

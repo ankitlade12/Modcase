@@ -4,6 +4,7 @@ import { buildDemoRecords } from './modcase/demo.js';
 import { makeId, stableHash } from './modcase/hash.js';
 import { decisionKey, idxKey, lookupContextKey, rawLogKey, ruleMappingKey, settingsKey, trainingContextKey } from './modcase/keys.js';
 import { buildDecisionFromModAction, extractSubreddit, targetContextFromMenu } from './modcase/payload.js';
+import { suggestReasonFromText } from './modcase/suggest.js';
 import { REASON_LABELS, labelFor, normalizeReasonValue, type ReasonLabel } from './modcase/reasons.js';
 import { countBucketDivergences, DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
 import {
@@ -50,6 +51,7 @@ type SettingsForm = {
   subreddit?: string;
   decisionRetentionDays?: string | string[];
   lookupLimit?: string | string[];
+  reasonSuggestion?: string | string[];
 };
 
 type UnknownCleanupForm = {
@@ -158,10 +160,12 @@ function firstNumberValue(value: string | string[] | undefined): number | undefi
 }
 
 function settingsFromForm(body: SettingsForm, now = Date.now()): ModCaseSettings {
+  const suggestionValue = decodeFormContextValue(firstFormValue(body.reasonSuggestion)).value;
   return normalizeSettings(
     {
       decisionRetentionDays: firstNumberValue(body.decisionRetentionDays),
       lookupLimit: firstNumberValue(body.lookupLimit),
+      reasonSuggestionEnabled: suggestionValue === 'on',
       updatedAt: now,
     },
     now,
@@ -654,12 +658,19 @@ export function createModCaseApp({
     const token = makeId('lookup');
     await redis.set(lookupContextKey(token), JSON.stringify(target), { expiration: expirationFromNow(LOOKUP_CONTEXT_TTL_SECONDS) });
 
+    const settings = await loadSettings(target.subreddit);
+    const suggestedReason = settings.reasonSuggestionEnabled ? suggestReasonFromText(target.currentSnippet) : null;
+    const defaultReason = suggestedReason ?? 'harassment_abuse';
+    const description = suggestedReason
+      ? `Pick the rule/reason you are considering. From the text, ModCase suggests "${labelFor(suggestedReason)}" as a starting point - confirm or change it.`
+      : 'Pick the rule/reason you are considering. ModCase will show how the team handled similar past decisions.';
+
     return c.json<UiResponse>({
       showForm: {
         name: 'modcaseReasonPicker',
         form: {
           title: 'Check ModCase precedent',
-          description: 'Pick the rule/reason you are considering. ModCase will show how the team handled similar past decisions.',
+          description,
           acceptLabel: 'Show precedent',
           cancelLabel: 'Cancel',
           fields: [
@@ -669,7 +680,7 @@ export function createModCaseApp({
               label: 'Reason / rule',
               required: true,
               options: REASON_LABELS.map((r) => ({ label: r.label, value: encodeFormContextValue(r.value, token) })),
-              defaultValue: [encodeFormContextValue('harassment_abuse', token)],
+              defaultValue: [encodeFormContextValue(defaultReason, token)],
             },
           ],
         },
@@ -829,6 +840,17 @@ export function createModCaseApp({
               options: LOOKUP_LIMIT_OPTIONS.map((limit) => ({ label: `${limit} recent matches`, value: encodeFormContextValue(String(limit), subreddit) })),
               defaultValue: [encodeFormContextValue(String(settings.lookupLimit), subreddit)],
             },
+            {
+              type: 'select',
+              name: 'reasonSuggestion',
+              label: 'Reason suggestion (opt-in)',
+              required: true,
+              options: [
+                { label: 'Off - moderator picks the reason', value: encodeFormContextValue('off', subreddit) },
+                { label: 'On - suggest a starting reason from the text', value: encodeFormContextValue('on', subreddit) },
+              ],
+              defaultValue: [encodeFormContextValue(settings.reasonSuggestionEnabled ? 'on' : 'off', subreddit)],
+            },
           ],
         },
         data: { subreddit },
@@ -850,7 +872,7 @@ export function createModCaseApp({
       return c.json<UiResponse>({ showToast: 'ModCase could not save settings. Check Devvit logs.' });
     }
 
-    return c.json<UiResponse>({ showToast: `ModCase settings saved: ${settings.decisionRetentionDays}d retention, ${settings.lookupLimit} lookup cap.` });
+    return c.json<UiResponse>({ showToast: `ModCase settings saved: ${settings.decisionRetentionDays}d retention, ${settings.lookupLimit} lookup cap, reason suggestions ${settings.reasonSuggestionEnabled ? 'on' : 'off'}.` });
   });
 
   app.post('/internal/menu/audit-snapshot', async (c) => {
