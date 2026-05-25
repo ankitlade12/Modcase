@@ -24,7 +24,7 @@ In a test subreddit:
 2. Open a post or comment -> `ModCase: Check precedent`.
 3. Pick a reason and verify the precedent summary. If the menu payload includes current text, examples are keyword-assisted within the same deterministic bucket. The panel leads with the settled/leaning/contested verdict.
 4. Perform a real approve/remove action and inspect Devvit logs for the raw payload shape.
-5. Optional: open subreddit menu -> `ModCase: Team insights` and pick a report (rule health, rule trends, contested rules, second review, rule drift, community constitution, transparency summary, audit snapshot, export report). Other subreddit items: `ModCase: Sync rules`, `Unknown cleanup`, `Training mode`, and `Settings`.
+5. Optional: open subreddit menu -> `ModCase: Team insights` and pick a report (consistency digest, rule health, rule trends, contested rules, second review, rule drift, community constitution, transparency summary, audit snapshot, export report). Other subreddit items: `ModCase: Sync rules`, `Unknown cleanup`, `Training mode`, and `Settings`.
 
 ## Read First
 
