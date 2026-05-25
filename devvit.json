@@ -35,6 +35,13 @@
         "endpoint": "/internal/menu/team-insights"
       },
       {
+        "label": "ModCase: Compare community",
+        "description": "Paste another community's exported profile to compare aggregate moderation norms.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/compare-community"
+      },
+      {
         "label": "ModCase: Sync rules",
         "description": "Import subreddit rules into the controlled ModCase reason-label map.",
         "location": "subreddit",
@@ -85,6 +92,7 @@
     "modcaseUnknownCleanupForm": "/internal/form/unknown-cleanup-submit",
     "modcaseTrainingForm": "/internal/form/training-submit",
     "modcaseInsightsPicker": "/internal/form/insights-submit",
+    "modcaseCompareForm": "/internal/form/compare-submit",
     "modcaseSummaryAck": "/internal/form/summary-ack"
   },
   "triggers": {

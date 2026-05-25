@@ -710,4 +710,49 @@ describe('Devvit route behavior', () => {
     expect(saveResult.showToast).toBe('ModCase settings saved: 180d retention, 50 lookup cap, reason suggestions on.');
     expect(JSON.parse(strings.get(settingsKey('example')) ?? '{}')).toMatchObject({ reasonSuggestionEnabled: true });
   });
+
+  it('exports a community profile and compares against a pasted profile', async () => {
+    const now = Date.parse('2026-05-24T12:00:00.000Z');
+    for (let i = 0; i < 6; i += 1) {
+      const id = `cc:${i}`;
+      const record = {
+        decisionId: id,
+        subreddit: 'example',
+        targetType: 'comment',
+        targetHash: `cc-h-${i}`,
+        action: 'removed',
+        reasonLabel: 'harassment_abuse',
+        timestamp: now + i,
+        source: 'demo_seed',
+      };
+      strings.set(decisionKey(id), JSON.stringify(record));
+      sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [
+        ...sortedItems(idxKey('example', 'comment', 'harassment_abuse')),
+        { member: id, score: now + i },
+      ]);
+    }
+
+    const exported = await postJson('/internal/form/insights-submit', { report: ['profile::modcasectx::example'] });
+    expect(exported.showForm.form.fields[0].defaultValue).toContain('ModCase community profile');
+    expect(exported.showForm.form.fields[0].defaultValue).toContain('"reasonLabel":"harassment_abuse"');
+
+    const otherProfile = JSON.stringify({
+      v: 1,
+      subreddit: 'othercommunity',
+      generatedAt: 1,
+      buckets: [{ targetType: 'comment', reasonLabel: 'harassment_abuse', total: 8, removed: 1, approved: 7, signal: 'settled', majorityAction: 'approved' }],
+    });
+
+    const open = await postJson('/internal/menu/compare-community', { subredditName: 'r/Example' });
+    expect(open.showForm.name).toBe('modcaseCompareForm');
+
+    const result = await postJson('/internal/form/compare-submit', { subreddit: 'example', profileText: otherProfile });
+    const text = result.showForm.form.fields[0].defaultValue;
+    expect(text).toContain('r/example vs r/othercommunity');
+    expect(text).toContain('comment / Harassment / Abuse');
+    expect(text).toContain('differ');
+
+    const bad = await postJson('/internal/form/compare-submit', { subreddit: 'example', profileText: 'garbage' });
+    expect(bad.showToast).toContain('could not read that profile');
+  });
 });

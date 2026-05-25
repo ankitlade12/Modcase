@@ -5,6 +5,15 @@ import { makeId, stableHash } from './modcase/hash.js';
 import { decisionKey, idxKey, lookupContextKey, rawLogKey, ruleMappingKey, settingsKey, trainingContextKey } from './modcase/keys.js';
 import { buildDecisionFromModAction, extractSubreddit, targetContextFromMenu } from './modcase/payload.js';
 import { suggestReasonFromText } from './modcase/suggest.js';
+import {
+  buildCommunityProfile,
+  compareProfiles,
+  encodeCommunityProfile,
+  parseCommunityProfile,
+  PROFILE_MIN_SAMPLE,
+  type CommunityProfile,
+  type ProfileComparisonRow,
+} from './modcase/profile.js';
 import { REASON_LABELS, labelFor, normalizeReasonValue, type ReasonLabel } from './modcase/reasons.js';
 import { countBucketDivergences, DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
 import {
@@ -480,6 +489,37 @@ function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[]): s
       : 'No recent decisions went against settled or leaning precedent. The team is either consistent or still building history.',
     '',
     'This digest is team-level and excludes usernames, moderator identities, and raw content.',
+  ].join('\n');
+}
+
+function formatProfileExport(profile: CommunityProfile): string {
+  return [
+    'ModCase community profile',
+    `Subreddit: r/${profile.subreddit}`,
+    `Buckets shared (>= ${PROFILE_MIN_SAMPLE} decisions each): ${profile.buckets.length}`,
+    'Aggregate only - no usernames, moderator identities, or raw content. Copy everything below and share it with another community to compare norms.',
+    '',
+    encodeCommunityProfile(profile),
+  ].join('\n');
+}
+
+function formatProfileComparison(localSubreddit: string, other: CommunityProfile, rows: ProfileComparisonRow[]): string {
+  const differ = rows.filter((row) => !row.agree);
+  const sideText = (action: ProfileComparisonRow['localMajority'], share: number) => (action ? `${action} ${Math.round(share * 100)}%` : 'no clear majority');
+
+  return [
+    'ModCase community comparison',
+    `r/${localSubreddit} vs r/${other.subreddit}`,
+    `Shared reason/content-type buckets compared: ${rows.length}`,
+    `Where norms differ: ${differ.length}`,
+    '',
+    rows.length
+      ? rows
+          .map((row) => `${row.targetType} / ${labelFor(row.reasonLabel)}: you ${sideText(row.localMajority, row.localShare)}, r/${other.subreddit} ${sideText(row.otherMajority, row.otherShare)} - ${row.agree ? 'aligned' : 'differ'}`)
+          .join('\n')
+      : 'No reason/content-type buckets had enough history on both sides to compare.',
+    '',
+    'Comparison is aggregate-only and based on shared profile signals, not raw content.',
   ].join('\n');
 }
 
@@ -1364,6 +1404,7 @@ export function createModCaseApp({
                 { label: 'Transparency summary', value: encodeFormContextValue('transparency', subreddit) },
                 { label: 'Audit snapshot', value: encodeFormContextValue('audit', subreddit) },
                 { label: 'Export report', value: encodeFormContextValue('export', subreddit) },
+                { label: 'Export community profile', value: encodeFormContextValue('profile', subreddit) },
               ],
               defaultValue: [encodeFormContextValue('rule-health', subreddit)],
             },
@@ -1434,6 +1475,10 @@ export function createModCaseApp({
         report = formatExportReport(subreddit, settings, buckets, rules);
         break;
       }
+      case 'profile':
+        title = 'ModCase community profile';
+        report = formatProfileExport(buildCommunityProfile(subreddit, buckets));
+        break;
       default:
         return c.json<UiResponse>({ showToast: 'ModCase could not identify that report.' });
     }
@@ -1456,6 +1501,69 @@ export function createModCaseApp({
           ],
         },
         data: { insightsReport: report },
+      },
+    });
+  });
+
+  app.post('/internal/menu/compare-community', async (c) => {
+    const input = await c.req.json<MenuItemRequest & Record<string, any>>().catch(() => ({}));
+    const subreddit = extractSubreddit(input, getSubredditName());
+
+    return c.json<UiResponse>({
+      showForm: {
+        name: 'modcaseCompareForm',
+        form: {
+          title: 'Compare community precedent',
+          description: 'Paste another community\'s exported ModCase profile to compare aggregate norms. Create one with Team insights -> Export community profile.',
+          acceptLabel: 'Compare',
+          cancelLabel: 'Cancel',
+          fields: [
+            {
+              type: 'paragraph',
+              name: 'profileText',
+              label: 'Pasted community profile',
+              placeholder: 'Paste the full ModCase community profile text here.',
+              required: true,
+              lineHeight: 8,
+            },
+          ],
+        },
+        data: { subreddit },
+      },
+    });
+  });
+
+  app.post('/internal/form/compare-submit', async (c) => {
+    const body = await c.req.json<{ profileText?: string; subreddit?: string }>();
+    const subreddit = extractSubreddit({ subredditName: body.subreddit }, getSubredditName());
+    const other = parseCommunityProfile(body.profileText);
+    if (!other) {
+      return c.json<UiResponse>({ showToast: 'ModCase could not read that profile. Copy the full exported text and try again.' });
+    }
+
+    const settings = await loadSettings(subreddit);
+    const buckets = await collectBucketSummaries(subreddit, settings);
+    const local = buildCommunityProfile(subreddit, buckets);
+    const report = formatProfileComparison(subreddit, other, compareProfiles(local, other));
+
+    return c.json<UiResponse>({
+      showForm: {
+        name: 'modcaseSummaryAck',
+        form: {
+          title: 'ModCase community comparison',
+          acceptLabel: 'Close',
+          fields: [
+            {
+              type: 'paragraph',
+              name: 'comparison',
+              label: 'Aggregate comparison',
+              defaultValue: report,
+              disabled: true,
+              lineHeight: 14,
+            },
+          ],
+        },
+        data: { comparison: report },
       },
     });
   });
