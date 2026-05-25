@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPrecedentSummary, summarize } from '../src/modcase/summary.js';
+import { countBucketDivergences, formatPrecedentSummary, summarize } from '../src/modcase/summary.js';
 import type { DecisionAction, DecisionRecord } from '../src/modcase/types.js';
 
 function record(action: DecisionAction, i: number): DecisionRecord {
@@ -80,5 +80,17 @@ describe('precedent summaries', () => {
     expect(text).toContain('No team precedent yet for Low Effort posts.');
     expect(text).toContain('ModCase: Seed demo data');
     expect(text).not.toContain('Counts from last');
+  });
+});
+
+describe('consistency divergences', () => {
+  it('counts a decision that went against the established majority', () => {
+    const records = [record('approved', 0), ...[1, 2, 3, 4, 5].map((i) => record('removed', i))];
+    expect(countBucketDivergences(records)).toEqual({ total: 6, divergent: 1 });
+  });
+
+  it('counts no divergence when the minority action predates the majority', () => {
+    const records = [...[0, 1, 2, 3, 4].map((i) => record('removed', i)), record('approved', 5)];
+    expect(countBucketDivergences(records)).toEqual({ total: 6, divergent: 0 });
   });
 });
