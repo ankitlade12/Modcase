@@ -1,5 +1,8 @@
-import type { ReasonLabel } from './reasons.js';
+import { REASON_LABELS, type ReasonLabel } from './reasons.js';
 import type { DecisionAction, DecisionSummary, SignalKind, TargetType } from './types.js';
+
+const REASON_VALUES = new Set<ReasonLabel>(REASON_LABELS.map((reason) => reason.value));
+const KNOWN_SIGNALS: readonly SignalKind[] = ['limited_history', 'settled', 'leaning', 'contested'];
 
 /**
  * Cross-community comparison without a shared backend: a subreddit exports an aggregate,
@@ -50,9 +53,15 @@ export function encodeCommunityProfile(profile: CommunityProfile): string {
 
 export function parseCommunityProfile(input: string | undefined): CommunityProfile | null {
   if (!input || !input.trim()) return null;
+  // Accept either bare JSON or the full multi-line export block by extracting the JSON object.
+  const trimmed = input.trim();
+  const start = trimmed.indexOf('{');
+  const end = trimmed.lastIndexOf('}');
+  const jsonText = start >= 0 && end >= start ? trimmed.slice(start, end + 1) : trimmed;
+
   let raw: unknown;
   try {
-    raw = JSON.parse(input.trim());
+    raw = JSON.parse(jsonText);
   } catch {
     return null;
   }
@@ -65,19 +74,21 @@ export function parseCommunityProfile(input: string | undefined): CommunityProfi
     if (!entry || typeof entry !== 'object') continue;
     const bucket = entry as Partial<ProfileBucket>;
     if (bucket.targetType !== 'post' && bucket.targetType !== 'comment') continue;
-    if (typeof bucket.reasonLabel !== 'string') continue;
+    if (typeof bucket.reasonLabel !== 'string' || !REASON_VALUES.has(bucket.reasonLabel as ReasonLabel)) continue;
     if (typeof bucket.total !== 'number' || typeof bucket.removed !== 'number' || typeof bucket.approved !== 'number') continue;
+    if (bucket.total < 0 || bucket.removed < 0 || bucket.approved < 0) continue;
+    const signal: SignalKind = KNOWN_SIGNALS.includes(bucket.signal as SignalKind) ? (bucket.signal as SignalKind) : 'limited_history';
     buckets.push({
       targetType: bucket.targetType,
       reasonLabel: bucket.reasonLabel as ReasonLabel,
       total: bucket.total,
       removed: bucket.removed,
       approved: bucket.approved,
-      signal: (bucket.signal as SignalKind) ?? 'limited_history',
+      signal,
       ...(bucket.majorityAction === 'removed' || bucket.majorityAction === 'approved' ? { majorityAction: bucket.majorityAction } : {}),
     });
   }
-  return { v: 1, subreddit: candidate.subreddit, generatedAt: typeof candidate.generatedAt === 'number' ? candidate.generatedAt : 0, buckets };
+  return { v: 1, subreddit: candidate.subreddit.slice(0, 50), generatedAt: typeof candidate.generatedAt === 'number' ? candidate.generatedAt : 0, buckets };
 }
 
 export type ProfileComparisonRow = {
@@ -111,7 +122,7 @@ export function compareProfiles(local: CommunityProfile, other: CommunityProfile
       localShare: majorityShare(localBucket),
       otherMajority: otherBucket.majorityAction,
       otherShare: majorityShare(otherBucket),
-      agree: Boolean(localBucket.majorityAction) && localBucket.majorityAction === otherBucket.majorityAction,
+      agree: localBucket.majorityAction !== undefined ? localBucket.majorityAction === otherBucket.majorityAction : otherBucket.majorityAction === undefined,
     });
   }
   return rows;

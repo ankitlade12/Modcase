@@ -752,6 +752,11 @@ describe('Devvit route behavior', () => {
     expect(text).toContain('comment / Harassment / Abuse');
     expect(text).toContain('differ');
 
+    // Round-trip: the full multi-line exported text must parse back through compare-submit.
+    const roundTrip = await postJson('/internal/form/compare-submit', { subreddit: 'example', profileText: exported.showForm.form.fields[0].defaultValue });
+    expect(roundTrip.showForm.form.fields[0].defaultValue).toContain('r/example vs r/example');
+    expect(roundTrip.showForm.form.fields[0].defaultValue).toContain('aligned');
+
     const bad = await postJson('/internal/form/compare-submit', { subreddit: 'example', profileText: 'garbage' });
     expect(bad.showToast).toContain('could not read that profile');
   });

@@ -62,4 +62,39 @@ describe('community profiles', () => {
     const spam = rows.find((row) => row.reasonLabel === 'spam_promotional');
     expect(spam?.agree).toBe(true);
   });
+
+  it('extracts the JSON object from a full multi-line export block', () => {
+    const profile = buildCommunityProfile('ours', [{ targetType: 'comment', reasonLabel: 'harassment_abuse', summary: summary(7, 1) }], 1000);
+    const exportBlock = `ModCase community profile\nSubreddit: r/ours\nAggregate only - no usernames.\n\n${encodeCommunityProfile(profile)}`;
+    const parsed = parseCommunityProfile(exportBlock);
+    expect(parsed?.subreddit).toBe('ours');
+    expect(parsed?.buckets[0]).toMatchObject({ reasonLabel: 'harassment_abuse', total: 8 });
+  });
+
+  it('treats two buckets with no clear majority as aligned, not differing', () => {
+    const noMajority = {
+      v: 1 as const,
+      subreddit: 's',
+      generatedAt: 0,
+      buckets: [{ targetType: 'comment' as const, reasonLabel: 'harassment_abuse' as const, total: 6, removed: 3, approved: 3, signal: 'contested' as const }],
+    };
+    const rows = compareProfiles(noMajority, noMajority);
+    expect(rows[0].agree).toBe(true);
+  });
+
+  it('drops buckets with an unknown reason label or negative counts', () => {
+    const crafted = JSON.stringify({
+      v: 1,
+      subreddit: 'x',
+      generatedAt: 0,
+      buckets: [
+        { targetType: 'comment', reasonLabel: 'totally_made_up', total: 9, removed: 9, approved: 0, signal: 'settled', majorityAction: 'removed' },
+        { targetType: 'post', reasonLabel: 'spam_promotional', total: -5, removed: -5, approved: 0, signal: 'settled' },
+        { targetType: 'comment', reasonLabel: 'spam_promotional', total: 6, removed: 6, approved: 0, signal: 'settled', majorityAction: 'removed' },
+      ],
+    });
+    const parsed = parseCommunityProfile(crafted);
+    expect(parsed?.buckets).toHaveLength(1);
+    expect(parsed?.buckets[0].reasonLabel).toBe('spam_promotional');
+  });
 });
