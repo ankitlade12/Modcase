@@ -698,4 +698,16 @@ describe('Devvit route behavior', () => {
     expect(onResult.showForm.form.fields[0].defaultValue[0]).toContain('spam_promotional');
     expect(onResult.showForm.form.description).toContain('Spam / Promotional');
   });
+
+  it('persists the opt-in reason suggestion setting when enabled via the form', async () => {
+    const saveResult = await postJson('/internal/form/settings-submit', {
+      subreddit: 'example',
+      decisionRetentionDays: ['180'],
+      lookupLimit: ['50'],
+      reasonSuggestion: ['on'],
+    });
+
+    expect(saveResult.showToast).toBe('ModCase settings saved: 180d retention, 50 lookup cap, reason suggestions on.');
+    expect(JSON.parse(strings.get(settingsKey('example')) ?? '{}')).toMatchObject({ reasonSuggestionEnabled: true });
+  });
 });

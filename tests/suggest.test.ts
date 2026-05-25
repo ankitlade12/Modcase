@@ -18,4 +18,10 @@ describe('reason suggestion (opt-in keyword heuristic)', () => {
     expect(suggestReasonFromText(undefined)).toBeNull();
     expect(suggestReasonFromText('   ')).toBeNull();
   });
+
+  it('is a heuristic: a benign crypto question is still flagged as spam (acknowledged limitation)', () => {
+    // Documents a known false positive. Acceptable because the feature is opt-in, suggestion-only,
+    // and the moderator confirms or changes the reason; all options stay available.
+    expect(suggestReasonFromText('What is the best crypto exchange for beginners?')).toBe('spam_promotional');
+  });
 });
