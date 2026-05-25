@@ -1290,6 +1290,126 @@ export function createModCaseApp({
     });
   });
 
+  app.post('/internal/menu/team-insights', async (c) => {
+    const input = await c.req.json<MenuItemRequest & Record<string, any>>().catch(() => ({}));
+    const subreddit = extractSubreddit(input, getSubredditName());
+
+    return c.json<UiResponse>({
+      showForm: {
+        name: 'modcaseInsightsPicker',
+        form: {
+          title: 'ModCase team insights',
+          description: 'Pick an aggregate report. Every report is team-level and excludes usernames, moderator identities, and raw content.',
+          acceptLabel: 'Show report',
+          cancelLabel: 'Cancel',
+          fields: [
+            {
+              type: 'select',
+              name: 'report',
+              label: 'Report',
+              required: true,
+              options: [
+                { label: 'Rule health', value: encodeFormContextValue('rule-health', subreddit) },
+                { label: 'Rule trends', value: encodeFormContextValue('rule-trends', subreddit) },
+                { label: 'Contested rules', value: encodeFormContextValue('contested-rules', subreddit) },
+                { label: 'Second review', value: encodeFormContextValue('second-review', subreddit) },
+                { label: 'Rule drift', value: encodeFormContextValue('rule-drift', subreddit) },
+                { label: 'Community constitution', value: encodeFormContextValue('community-constitution', subreddit) },
+                { label: 'Transparency summary', value: encodeFormContextValue('transparency', subreddit) },
+                { label: 'Audit snapshot', value: encodeFormContextValue('audit', subreddit) },
+                { label: 'Export report', value: encodeFormContextValue('export', subreddit) },
+              ],
+              defaultValue: [encodeFormContextValue('rule-health', subreddit)],
+            },
+          ],
+        },
+        data: { subreddit },
+      },
+    });
+  });
+
+  app.post('/internal/form/insights-submit', async (c) => {
+    const body = await c.req.json<{ report?: string | string[]; subreddit?: string }>();
+    const decoded = decodeFormContextValue(firstFormValue(body.report));
+    const reportKey = decoded.value ?? '';
+    const subreddit = extractSubreddit({ subredditName: body.subreddit ?? decoded.context }, getSubredditName());
+    const settings = await loadSettings(subreddit);
+    const buckets = await collectBucketSummaries(subreddit, settings);
+
+    let title = 'ModCase team insights';
+    let report: string;
+    switch (reportKey) {
+      case 'rule-health':
+        title = 'ModCase rule health';
+        report = formatRuleHealthReport(subreddit, settings, buckets);
+        break;
+      case 'rule-trends':
+        title = 'ModCase rule trends';
+        report = formatTrendReport(subreddit, settings, buckets);
+        break;
+      case 'contested-rules':
+        title = 'ModCase contested rules';
+        report = formatContestedReport(subreddit, settings, buckets);
+        break;
+      case 'second-review':
+        title = 'ModCase second review';
+        report = formatSecondReviewReport(subreddit, settings, buckets);
+        break;
+      case 'rule-drift':
+        title = 'ModCase rule drift';
+        report = formatRuleDriftReport(subreddit, settings, buckets);
+        break;
+      case 'community-constitution':
+        title = 'ModCase constitution';
+        report = formatCommunityConstitution(subreddit, buckets);
+        break;
+      case 'transparency':
+        title = 'ModCase transparency';
+        report = formatTransparencyReport(subreddit, buckets);
+        break;
+      case 'audit': {
+        title = 'ModCase audit snapshot';
+        const rows: { targetType: TargetType; reasonLabel: ReasonLabel; count: number }[] = [];
+        for (const targetType of ['post', 'comment'] as const) {
+          for (const reason of REASON_LABELS) {
+            rows.push({ targetType, reasonLabel: reason.value, count: await redis.zCard(idxKey(subreddit, targetType, reason.value)) });
+          }
+        }
+        report = formatAuditSnapshot(subreddit, rows);
+        break;
+      }
+      case 'export': {
+        title = 'ModCase export report';
+        const rules = normalizeImportedRules(parseJsonObject(await redis.get(ruleMappingKey(subreddit))));
+        report = formatExportReport(subreddit, settings, buckets, rules);
+        break;
+      }
+      default:
+        return c.json<UiResponse>({ showToast: 'ModCase could not identify that report.' });
+    }
+
+    return c.json<UiResponse>({
+      showForm: {
+        name: 'modcaseSummaryAck',
+        form: {
+          title,
+          acceptLabel: 'Close',
+          fields: [
+            {
+              type: 'paragraph',
+              name: 'insightsReport',
+              label: 'Team insight',
+              defaultValue: report,
+              disabled: true,
+              lineHeight: 14,
+            },
+          ],
+        },
+        data: { insightsReport: report },
+      },
+    });
+  });
+
   app.post('/internal/menu/seed-demo', async (c) => {
     const input = await c.req.json<MenuItemRequest & Record<string, any>>();
     const subreddit = extractSubreddit(input, getSubredditName());

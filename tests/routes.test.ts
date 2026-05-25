@@ -585,4 +585,63 @@ describe('Devvit route behavior', () => {
     expect(sortedItems(idxKey('example', 'comment', 'harassment_abuse'))).toHaveLength(8);
     expect(sortedItems(idxKey('example', 'post', 'low_effort'))).toHaveLength(2);
   });
+
+  it('consolidates reports behind the Team insights picker', async () => {
+    const now = Date.parse('2026-05-24T12:00:00.000Z');
+    const actions = ['removed', 'removed', 'removed', 'approved', 'approved'] as const;
+    actions.forEach((action, index) => {
+      const id = `insights:${index}`;
+      const record = {
+        decisionId: id,
+        subreddit: 'example',
+        targetType: 'comment',
+        targetHash: `insights-h-${index}`,
+        action,
+        reasonLabel: 'harassment_abuse',
+        timestamp: now + index,
+        source: 'demo_seed',
+      };
+      strings.set(decisionKey(id), JSON.stringify(record));
+      sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [
+        ...sortedItems(idxKey('example', 'comment', 'harassment_abuse')),
+        { member: id, score: now + index },
+      ]);
+    });
+
+    const open = await postJson('/internal/menu/team-insights', { subredditName: 'r/Example' });
+    expect(open.showForm.name).toBe('modcaseInsightsPicker');
+    expect(open.showForm.form.fields[0].options[0].value).toContain('rule-health');
+
+    const health = await postJson('/internal/form/insights-submit', { report: ['rule-health::modcasectx::example'] });
+    expect(health.showForm.name).toBe('modcaseSummaryAck');
+    expect(health.showForm.form.fields[0].defaultValue).toContain('ModCase rule health');
+    expect(health.showForm.form.fields[0].defaultValue).toContain('Leaning: 1');
+
+    const audit = await postJson('/internal/form/insights-submit', { report: ['audit::modcasectx::example'] });
+    expect(audit.showForm.form.fields[0].defaultValue).toContain('Total indexed decisions: 5');
+
+    const exportReport = await postJson('/internal/form/insights-submit', { report: ['export::modcasectx::example'] });
+    expect(exportReport.showForm.form.fields[0].defaultValue).toContain('ModCase aggregate export');
+
+    const trends = await postJson('/internal/form/insights-submit', { report: ['rule-trends::modcasectx::example'] });
+    expect(trends.showForm.form.fields[0].defaultValue).toContain('ModCase rule trends');
+
+    const contested = await postJson('/internal/form/insights-submit', { report: ['contested-rules::modcasectx::example'] });
+    expect(contested.showForm.form.fields[0].defaultValue).toContain('ModCase contested-rule review');
+
+    const secondReview = await postJson('/internal/form/insights-submit', { report: ['second-review::modcasectx::example'] });
+    expect(secondReview.showForm.form.fields[0].defaultValue).toContain('ModCase second-review suggestions');
+
+    const drift = await postJson('/internal/form/insights-submit', { report: ['rule-drift::modcasectx::example'] });
+    expect(drift.showForm.form.fields[0].defaultValue).toContain('ModCase rule drift');
+
+    const constitution = await postJson('/internal/form/insights-submit', { report: ['community-constitution::modcasectx::example'] });
+    expect(constitution.showForm.form.fields[0].defaultValue).toContain('moderation constitution');
+
+    const transparency = await postJson('/internal/form/insights-submit', { report: ['transparency::modcasectx::example'] });
+    expect(transparency.showForm.form.fields[0].defaultValue).toContain('moderation transparency summary');
+
+    const unknown = await postJson('/internal/form/insights-submit', { report: ['bogus::modcasectx::example'] });
+    expect(unknown.showToast).toContain('ModCase could not identify that report');
+  });
 });
