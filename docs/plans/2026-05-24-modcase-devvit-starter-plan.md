@@ -2,7 +2,7 @@
 
 ## Goal
 
-Create a GoldMind-style repository structure around the provided ModCase Devvit starter and keep the starter runnable from the repo root.
+Create a product-ready repository structure around the provided ModCase Devvit starter and keep the starter runnable from the repo root.
 
 ## Completed Scaffold
 
@@ -10,7 +10,7 @@ Create a GoldMind-style repository structure around the provided ModCase Devvit 
 - Devvit Web server entry at `src/index.ts`.
 - Original starter README preserved at `docs/starter/modcase_devvit_starter.md`.
 - Node, Vite, TypeScript, Vitest, Makefile, and config verification scripts.
-- Docs structure mirroring GoldMind: architecture, decisions, local dev, plans, product, research, status, and handoff.
+- Docs structure covering architecture, decisions, local dev, plans, product, research, status, and handoff.
 - Core ModCase behavior extracted into focused modules under `src/modcase/`.
 - Behavior tests added for reason normalization, payload extraction, decision capture, and summary classification.
 - Route-level tests added for menu/form/trigger behavior with mocked Redis.

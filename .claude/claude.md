@@ -1,6 +1,6 @@
 # ModCase Assistant Context
 
-This repo is a Devvit Web app scaffolded from `modcase_devvit_starter.zip` with a GoldMind-style docs and workflow structure.
+This repo is a Devvit Web app scaffolded from `modcase_devvit_starter.zip` with a product-ready docs and workflow structure.
 
 Start with:
 

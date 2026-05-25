@@ -2,7 +2,7 @@
 
 ModCase is a Devvit Web app for moderator precedent lookup. It watches real moderator actions, stores privacy-conscious decision records in Redis, and lets a moderator check how similar cases were handled before deciding on a fresh post or comment.
 
-This repo starts from `modcase_devvit_starter.zip` and is structured like the GoldMind product repo: root workflow files, focused app source, docs, plans, status notes, scripts, tests, and assistant guidance.
+This repo starts from `modcase_devvit_starter.zip` and is structured as a product repo: root workflow files, focused app source, docs, plans, status notes, scripts, tests, and assistant guidance.
 
 ## Quick Local Test
 

@@ -2,7 +2,7 @@
 
 ## Checkpoint
 
-The provided `modcase_devvit_starter.zip` has been scaffolded into a GoldMind-style repo. The app entry is `src/index.ts`, Devvit config is `devvit.json`, and the original starter README is preserved under `docs/starter/`. The current Devvit app slug is `modcase-v1`.
+The provided `modcase_devvit_starter.zip` has been scaffolded into a product-ready repo. The app entry is `src/index.ts`, Devvit config is `devvit.json`, and the original starter README is preserved under `docs/starter/`. The current Devvit app slug is `modcase-v1`.
 
 ## What Works On Paper
 
