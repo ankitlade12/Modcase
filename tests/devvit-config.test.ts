@@ -14,7 +14,7 @@ describe('devvit.json', () => {
   });
 
   it('keeps moderator-facing actions locked to moderators', () => {
-    expect(devvitConfig.menu.items).toHaveLength(10);
+    expect(devvitConfig.menu.items).toHaveLength(11);
     for (const item of devvitConfig.menu.items) {
       expect(item.forUserType).toBe('moderator');
       expect(item.endpoint).toMatch(/^\/internal\//);

@@ -33,6 +33,7 @@ type RedisLike = {
   zCard(key: string): Promise<number>;
   zRange(key: string, start: number, stop: number, options?: unknown): Promise<{ member: string; score?: number }[]>;
   zRem?(key: string, members: string[]): Promise<unknown>;
+  del?(key: string): Promise<unknown>;
 };
 
 type ModCaseAppOptions = {
@@ -1575,6 +1576,23 @@ export function createModCaseApp({
 
     for (const record of seedRecords) await saveDecision(record);
     return c.json<UiResponse>({ showToast: `Seeded ${seedRecords.length} ModCase demo decisions for r/${subreddit}.` });
+  });
+
+  app.post('/internal/menu/clear-demo', async (c) => {
+    const input = await c.req.json<MenuItemRequest & Record<string, any>>().catch(() => ({}));
+    const subreddit = extractSubreddit(input, getSubredditName());
+    const demoRecords = buildDemoRecords(subreddit);
+
+    let cleared = 0;
+    for (const record of demoRecords) {
+      const existing = await redis.get(decisionKey(record.decisionId));
+      if (!existing) continue;
+      if (redis.zRem) await redis.zRem(idxKey(record.subreddit, record.targetType, record.reasonLabel), [record.decisionId]);
+      if (redis.del) await redis.del(decisionKey(record.decisionId));
+      cleared += 1;
+    }
+
+    return c.json<UiResponse>({ showToast: `ModCase cleared ${cleared} demo record${cleared === 1 ? '' : 's'} from r/${subreddit}. Real captured decisions are untouched.` });
   });
 
   app.post('/internal/menu/show-debug-log-count', async (c) => {

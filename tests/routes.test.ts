@@ -43,6 +43,10 @@ const redis = {
       sortedItems(key).filter((item) => !members.includes(item.member)),
     );
   },
+  async del(key: string) {
+    strings.delete(key);
+    setOptions.delete(key);
+  },
 };
 
 const reddit = {
@@ -759,5 +763,24 @@ describe('Devvit route behavior', () => {
 
     const bad = await postJson('/internal/form/compare-submit', { subreddit: 'example', profileText: 'garbage' });
     expect(bad.showToast).toContain('could not read that profile');
+  });
+
+  it('clears only the seeded demo records, leaving real captured decisions', async () => {
+    await postJson('/internal/menu/seed-demo', { subredditName: 'r/Example' });
+    expect(sortedItems(idxKey('example', 'comment', 'harassment_abuse'))).toHaveLength(8);
+
+    const realId = 'modaction:real1';
+    strings.set(
+      decisionKey(realId),
+      JSON.stringify({ decisionId: realId, subreddit: 'example', targetType: 'comment', targetHash: 'rh', action: 'removed', reasonLabel: 'harassment_abuse', timestamp: 1, source: 'mod_action_trigger' }),
+    );
+    sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [...sortedItems(idxKey('example', 'comment', 'harassment_abuse')), { member: realId, score: 1 }]);
+
+    const result = await postJson('/internal/menu/clear-demo', { subredditName: 'r/Example' });
+    expect(result.showToast).toContain('cleared 12 demo records');
+
+    expect(sortedItems(idxKey('example', 'comment', 'harassment_abuse'))).toEqual([{ member: realId, score: 1 }]);
+    expect(strings.get(decisionKey('demo:example:0'))).toBeUndefined();
+    expect(strings.get(decisionKey(realId))).toBeDefined();
   });
 });

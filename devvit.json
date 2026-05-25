@@ -77,6 +77,13 @@
         "endpoint": "/internal/menu/seed-demo"
       },
       {
+        "label": "ModCase: Clear demo data",
+        "description": "Delete the seeded demo decisions. Real captured decisions are untouched.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/clear-demo"
+      },
+      {
         "label": "ModCase: Debug log count",
         "description": "Show how many raw ModAction payloads were captured for verification.",
         "location": "subreddit",
