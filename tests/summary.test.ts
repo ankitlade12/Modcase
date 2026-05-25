@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countBucketDivergences, formatPrecedentSummary, summarize } from '../src/modcase/summary.js';
+import { consistencyIndex, countBucketDivergences, evaluateBucketAlignments, formatPrecedentSummary, summarize } from '../src/modcase/summary.js';
 import type { DecisionAction, DecisionRecord } from '../src/modcase/types.js';
 
 function record(action: DecisionAction, i: number): DecisionRecord {
@@ -81,6 +81,16 @@ describe('precedent summaries', () => {
     expect(text).toContain('ModCase: Seed demo data');
     expect(text).not.toContain('Counts from last');
   });
+
+  it('surfaces the closest past case when current text is provided', () => {
+    const records: DecisionRecord[] = [
+      { ...record('approved', 1), snippet: 'totally unrelated chatter' },
+      { ...record('removed', 2), snippet: 'buy cheap promo deal now' },
+    ];
+    const text = formatPrecedentSummary('spam_promotional', 'comment', records, { lookupText: 'cheap promo deal', minSignalSample: 5 });
+    expect(text).toContain('Closest past case: the team removed a comment');
+    expect(text).toContain('buy cheap promo deal now');
+  });
 });
 
 describe('consistency divergences', () => {
@@ -92,5 +102,32 @@ describe('consistency divergences', () => {
   it('counts no divergence when the minority action predates the majority', () => {
     const records = [...[0, 1, 2, 3, 4].map((i) => record('removed', i)), record('approved', 5)];
     expect(countBucketDivergences(records)).toEqual({ total: 6, divergent: 0 });
+  });
+
+  it('evaluates alignments only once a norm is established', () => {
+    const rec = (action: DecisionAction, ts: number): DecisionRecord => ({
+      decisionId: `x${ts}`,
+      subreddit: 's',
+      targetType: 'comment',
+      targetHash: 'h',
+      action,
+      reasonLabel: 'harassment_abuse',
+      timestamp: ts,
+      source: 'demo_seed',
+    });
+    const records = [rec('removed', 1), rec('removed', 2), rec('removed', 3), rec('removed', 4), rec('removed', 5), rec('approved', 6), rec('removed', 7)];
+    expect(evaluateBucketAlignments(records)).toEqual([
+      { timestamp: 6, aligned: false },
+      { timestamp: 7, aligned: true },
+    ]);
+  });
+
+  it('computes a windowed consistency index', () => {
+    const alignments = [
+      { timestamp: 100, aligned: true },
+      { timestamp: 200, aligned: false },
+      { timestamp: 300, aligned: true },
+    ];
+    expect(consistencyIndex(alignments, 150, 350)).toEqual({ evaluated: 2, aligned: 1 });
   });
 });

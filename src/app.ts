@@ -15,7 +15,7 @@ import {
   type ProfileComparisonRow,
 } from './modcase/profile.js';
 import { REASON_LABELS, labelFor, normalizeReasonValue, type ReasonLabel } from './modcase/reasons.js';
-import { countBucketDivergences, DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
+import { consistencyIndex, countBucketDivergences, DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, evaluateBucketAlignments, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
 import {
   DEFAULT_SETTINGS,
   LOOKUP_LIMIT_OPTIONS,
@@ -478,7 +478,7 @@ function formatSecondReviewReport(subreddit: string, settings: ModCaseSettings, 
   ].join('\n');
 }
 
-function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[]): string {
+function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[], now = Date.now()): string {
   const rows = buckets
     .map((bucket) => ({ bucket, divergence: countBucketDivergences(bucket.records) }))
     .filter((row) => row.divergence.divergent > 0)
@@ -486,9 +486,18 @@ function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[]): s
   const totalDivergent = rows.reduce((sum, row) => sum + row.divergence.divergent, 0);
   const totalDecisions = buckets.reduce((sum, bucket) => sum + bucket.records.length, 0);
 
+  const dayMs = 24 * 60 * 60 * 1000;
+  const alignments = buckets.flatMap((bucket) => evaluateBucketAlignments(bucket.records));
+  const thisWeek = consistencyIndex(alignments, now - 7 * dayMs, now);
+  const lastWeek = consistencyIndex(alignments, now - 14 * dayMs, now - 7 * dayMs);
+  const windowText = (window: { evaluated: number; aligned: number }) =>
+    window.evaluated ? `${Math.round((window.aligned / window.evaluated) * 100)}% (${window.aligned}/${window.evaluated})` : 'no measurable decisions';
+
   return [
     'ModCase consistency digest',
     `Subreddit: r/${subreddit}`,
+    '',
+    `Team consistency index (decisions that followed an established norm): this week ${windowText(thisWeek)}, previous week ${windowText(lastWeek)}.`,
     '',
     `Recent decisions that went against settled or leaning precedent: ${totalDivergent} of ${totalDecisions} across all reason and content-type buckets.`,
     'A decision is counted when, at the time it was made, the team already leaned the other way for that reason and content type.',

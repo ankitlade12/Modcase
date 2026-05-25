@@ -686,6 +686,7 @@ describe('Devvit route behavior', () => {
     expect(digest.showForm.name).toBe('modcaseSummaryAck');
     expect(digest.showForm.form.fields[0].defaultValue).toContain('ModCase consistency digest');
     expect(digest.showForm.form.fields[0].defaultValue).toContain('comment / Harassment / Abuse: 1 against-precedent of 6');
+    expect(digest.showForm.form.fields[0].defaultValue).toContain('Team consistency index');
   });
 
   it('surfaces one demo divergence in the consistency digest', async () => {

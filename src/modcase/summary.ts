@@ -24,29 +24,43 @@ export function summarize(records: DecisionRecord[], minSignalSample = DEFAULT_M
 }
 
 export type BucketDivergence = { total: number; divergent: number };
+export type DecisionAlignment = { timestamp: number; aligned: boolean };
+export type ConsistencyWindow = { evaluated: number; aligned: number };
 
 /**
- * Counts decisions that went against the bucket's own precedent at the time they were made:
- * walking the records oldest -> newest, if the prior decisions already formed a leaning-or-settled
- * majority (>= 60% with at least minSignalSample prior samples) and this decision took the opposite
- * action, it is counted as a divergence. Derived from stored records; no capture-time state needed.
+ * For each decision in a bucket, walking oldest -> newest, determines whether an established
+ * leaning-or-settled majority (>= 60% with at least minSignalSample prior samples) existed at the
+ * time and whether the decision followed it. Only decisions made once a norm existed are returned.
+ * Derived from stored records; no capture-time state needed.
  */
-export function countBucketDivergences(records: DecisionRecord[], minSignalSample = DEFAULT_MIN_SIGNAL_SAMPLE): BucketDivergence {
+export function evaluateBucketAlignments(records: DecisionRecord[], minSignalSample = DEFAULT_MIN_SIGNAL_SAMPLE): DecisionAlignment[] {
   const ordered = [...records].sort((a, b) => a.timestamp - b.timestamp);
   let removed = 0;
   let approved = 0;
-  let divergent = 0;
+  const alignments: DecisionAlignment[] = [];
   for (const r of ordered) {
     const total = removed + approved;
     if (total >= minSignalSample) {
       const majorityAction = removed >= approved ? 'removed' : 'approved';
       const majorityPct = Math.max(removed, approved) / total;
-      if (majorityPct >= 0.6 && r.action !== majorityAction) divergent += 1;
+      if (majorityPct >= 0.6) alignments.push({ timestamp: r.timestamp, aligned: r.action === majorityAction });
     }
     if (r.action === 'removed') removed += 1;
     else approved += 1;
   }
-  return { total: ordered.length, divergent };
+  return alignments;
+}
+
+/** Decisions that went against the bucket's own settled/leaning precedent at decision time. */
+export function countBucketDivergences(records: DecisionRecord[], minSignalSample = DEFAULT_MIN_SIGNAL_SAMPLE): BucketDivergence {
+  const alignments = evaluateBucketAlignments(records, minSignalSample);
+  return { total: records.length, divergent: alignments.filter((alignment) => !alignment.aligned).length };
+}
+
+/** Aggregates alignments whose timestamp falls in [start, end) into an evaluated/aligned tally. */
+export function consistencyIndex(alignments: DecisionAlignment[], start: number, end: number): ConsistencyWindow {
+  const inWindow = alignments.filter((alignment) => alignment.timestamp >= start && alignment.timestamp < end);
+  return { evaluated: inWindow.length, aligned: inWindow.filter((alignment) => alignment.aligned).length };
 }
 
 export function formatSignal(summary: DecisionSummary): string {
@@ -100,6 +114,12 @@ export function formatPrecedentSummary(
   const rankedRecords = rankRecordsForLookup(options.lookupText, records);
   const exactFingerprint = contentFingerprint(options.lookupText);
   const exactMatches = exactFingerprint ? records.filter((record) => record.contentFingerprint === exactFingerprint).length : 0;
+  const closest = options.lookupText
+    ? rankedRecords.find((r) => (exactFingerprint && r.contentFingerprint === exactFingerprint) || (r.sharedKeywords?.length ?? 0) > 0)
+    : undefined;
+  const closestLine = closest
+    ? `Closest past case: the team ${closest.action} a ${closest.targetType}${closest.snippet ? ` - "${closest.snippet}"` : ''}${closest.sharedKeywords?.length ? ` (shared: ${closest.sharedKeywords.slice(0, 3).join(', ')})` : ''}.`
+    : undefined;
   const examples = rankedRecords.slice(0, displayLimit).map((r, i) => {
     const age = new Date(r.timestamp).toLocaleDateString('en-US');
     const keywordNote = r.sharedKeywords?.length ? ` [keywords: ${r.sharedKeywords.slice(0, 3).join(', ')}]` : '';
@@ -115,6 +135,7 @@ export function formatPrecedentSummary(
     '',
     formatSignal(s),
     formatRecentTrend(records),
+    ...(closestLine ? [closestLine] : []),
     '',
     `Counts from last ${lookupLimit} matching decisions:`,
     `Removed: ${s.removed}`,
