@@ -56,6 +56,14 @@ const reddit = {
       { shortName: 'Stay on topic', kind: 'all', violationReason: 'Off topic' },
     ];
   },
+  async getPostById(id: string) {
+    if (id === 't3_spam') return { title: 'Buy now! Huge discount, promo code at https://mysite.com' };
+    return {};
+  },
+  async getCommentById(id: string) {
+    if (id === 't1_spam') return { body: 'Buy now discount promo at https://mysite.com' };
+    return {};
+  },
 };
 
 const app = createModCaseApp({ redis, reddit, getSubredditName: () => null });
@@ -782,5 +790,16 @@ describe('Devvit route behavior', () => {
     expect(sortedItems(idxKey('example', 'comment', 'harassment_abuse'))).toEqual([{ member: realId, score: 1 }]);
     expect(strings.get(decisionKey('demo:example:0'))).toBeUndefined();
     expect(strings.get(decisionKey(realId))).toBeDefined();
+  });
+
+  it('fetches item text from Reddit when the menu payload omits it', async () => {
+    strings.set(settingsKey('example'), JSON.stringify({ decisionRetentionDays: 180, lookupLimit: 50, reasonSuggestionEnabled: true, updatedAt: 1 }));
+
+    // No text in the payload, so the app must fetch the post body via reddit.getPostById('t3_spam').
+    const result = await postJson('/internal/menu/check-precedent', { postId: 't3_spam', subredditName: 'r/Example' });
+
+    expect(result.showForm.form.fields[0].defaultValue[0]).toContain('spam_promotional');
+    const token = result.showForm.data.lookupToken;
+    expect(JSON.parse(strings.get(lookupContextKey(token)) ?? '{}').currentSnippet).toContain('discount');
   });
 });

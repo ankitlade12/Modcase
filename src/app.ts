@@ -40,6 +40,8 @@ type ModCaseAppOptions = {
   redis: RedisLike;
   reddit?: {
     getRules?(subredditName: string): Promise<RedditRule[]>;
+    getCommentById?(id: string): Promise<{ body?: string } | null | undefined>;
+    getPostById?(id: string): Promise<{ title?: string; body?: string } | null | undefined>;
   };
   getSubredditName?: () => string | null;
   captureRawPayloadsForDebug?: boolean;
@@ -137,6 +139,12 @@ function normalizeTargetTypeValue(value: unknown): TargetType | null {
 function cleanInternalNote(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const cleaned = value.replace(/\s+/g, ' ').trim().slice(0, 180);
+  return cleaned || undefined;
+}
+
+function cleanSnippetText(text: string | undefined): string | undefined {
+  if (!text) return undefined;
+  const cleaned = text.replace(/\s+/g, ' ').trim().slice(0, 140);
   return cleaned || undefined;
 }
 
@@ -694,6 +702,24 @@ export function createModCaseApp({
     const target = targetContextFromMenu(input, getSubredditName());
     if (!target) {
       return c.json<UiResponse>({ showToast: 'ModCase could not identify the post/comment context. Check the menu payload logs.' });
+    }
+
+    // The live menu payload often omits the item body, which keyword assist, fingerprint
+    // matching, and the opt-in reason suggestion all need. Fetch it via the Reddit API when
+    // missing; on any failure we fall back to the no-text behavior.
+    if (!target.currentSnippet) {
+      try {
+        let fetched: string | undefined;
+        if (target.targetType === 'comment' && reddit?.getCommentById) {
+          fetched = cleanSnippetText((await reddit.getCommentById(target.targetId))?.body);
+        } else if (target.targetType === 'post' && reddit?.getPostById) {
+          const post = await reddit.getPostById(target.targetId);
+          fetched = cleanSnippetText(post?.title ?? post?.body);
+        }
+        if (fetched) target.currentSnippet = fetched;
+      } catch (error) {
+        console.error('[ModCase] could not load target text for keyword assist/suggestion:', error);
+      }
     }
 
     const token = makeId('lookup');
