@@ -59,3 +59,15 @@ Trend, contested-rule, and export reports derive from recent decision records an
 Status: active
 
 Rule health, second-review suggestions, rule drift, training mode, unknown cleanup, transparency summaries, and the community constitution are allowed because they help moderators understand team precedent. They do not classify fresh content, score users, score moderators, or take enforcement actions.
+
+## D-011: Consistency digest derives, it does not store
+
+Status: active
+
+The consistency digest reports how often recent decisions went against the team's own settled or leaning precedent. It is derived from the already-stored decision records at report time (consistent with D-002), so it needs no capture-time flag, no new index, and no schema change, and it works on demo-seeded data. It is aggregate and team-level: it never names a moderator or shows raw content.
+
+## D-012: Reason suggestion is opt-in and keyword-based
+
+Status: active
+
+ModCase can optionally pre-select a likely reason label in the precedent picker from the current item's text. This is off by default, keyword-based (a transparent heuristic, not an AI classifier), and suggestion-only: the moderator always confirms or changes the reason, and ModCase still takes no enforcement action. Keeping it opt-in preserves the default posture that the moderator chooses the reason and ModCase only surfaces precedent.

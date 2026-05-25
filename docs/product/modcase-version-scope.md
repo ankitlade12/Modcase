@@ -31,6 +31,8 @@
 - Community constitution generates a living aggregate summary of how the community tends to moderate.
 - Community transparency summary generates shareable aggregate language without raw bodies, usernames, or moderator identities.
 - Export reports expand the audit snapshot into a copyable, privacy-conscious aggregate report.
+- Consistency digest reports how often recent decisions went against the team's own settled or leaning precedent, derived from stored records and kept team-level only.
+- Opt-in reason suggestion can pre-select a likely reason label in the picker from the item text (keyword-based, off by default, suggestion-only).
 
 ## Still Out Of Scope
 
