@@ -73,9 +73,7 @@ type UnknownCleanupForm = {
   reasonLabel?: string | string[];
 };
 
-type TrainingAnswerForm = {
-  decisionAction?: string | string[];
-};
+type TrainingAnswerForm = Record<string, string | string[] | undefined>;
 
 type RedditRule = {
   shortName?: string;
@@ -98,7 +96,7 @@ type BucketSummary = {
 };
 
 type TrainingContext = {
-  decisionId: string;
+  decisionIds: string[];
   subreddit: string;
 };
 
@@ -244,10 +242,11 @@ function normalizeImportedRules(input: unknown): ImportedRule[] {
 function normalizeTrainingContext(input: unknown): TrainingContext | null {
   if (!input || typeof input !== 'object') return null;
   const candidate = input as Partial<TrainingContext>;
-  if (typeof candidate.decisionId !== 'string' || !candidate.decisionId.trim()) return null;
+  if (!Array.isArray(candidate.decisionIds) || candidate.decisionIds.length === 0) return null;
+  if (!candidate.decisionIds.every((id) => typeof id === 'string' && id.trim())) return null;
   if (typeof candidate.subreddit !== 'string' || !candidate.subreddit.trim()) return null;
   return {
-    decisionId: candidate.decisionId,
+    decisionIds: candidate.decisionIds,
     subreddit: candidate.subreddit,
   };
 }
@@ -1300,77 +1299,79 @@ export function createModCaseApp({
     const subreddit = extractSubreddit(input, getSubredditName());
     const settings = await loadSettings(subreddit);
     const buckets = await collectBucketSummaries(subreddit, settings);
-    const record = buckets
+    const cases = buckets
       .flatMap((bucket) => bucket.records)
       .filter((candidate) => candidate.snippet)
-      .sort((a, b) => b.timestamp - a.timestamp)[0];
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
 
-    if (!record) {
+    if (!cases.length) {
       return c.json<UiResponse>({ showToast: 'ModCase needs at least one precedent example with a snippet before training mode can start.' });
     }
 
     const token = makeId('training');
-    await redis.set(trainingContextKey(token), JSON.stringify({ decisionId: record.decisionId, subreddit }), { expiration: expirationFromNow(LOOKUP_CONTEXT_TTL_SECONDS) });
+    await redis.set(trainingContextKey(token), JSON.stringify({ decisionIds: cases.map((record) => record.decisionId), subreddit }), { expiration: expirationFromNow(LOOKUP_CONTEXT_TTL_SECONDS) });
 
     return c.json<UiResponse>({
       showForm: {
         name: 'modcaseTrainingForm',
         form: {
-          title: 'ModCase training',
-          description: `Reason: ${labelFor(record.reasonLabel)} / ${record.targetType}\nExample: "${record.snippet}"`,
-          acceptLabel: 'Check answer',
+          title: 'ModCase calibration',
+          description: `Guess how the team handled each of these ${cases.length} case${cases.length === 1 ? '' : 's'}. Your score is shown at the end and is not stored per moderator.`,
+          acceptLabel: 'Check answers',
           cancelLabel: 'Cancel',
-          fields: [
-            {
-              type: 'select',
-              name: 'decisionAction',
-              label: 'What did the team do?',
-              required: true,
-              options: [
-                { label: 'Removed', value: encodeFormContextValue('removed', token) },
-                { label: 'Approved', value: encodeFormContextValue('approved', token) },
-              ],
-              defaultValue: [encodeFormContextValue('removed', token)],
-            },
-          ],
+          fields: cases.map((record, index) => ({
+            type: 'select' as const,
+            name: `case_${index}`,
+            label: `Case ${index + 1}: ${labelFor(record.reasonLabel)} ${record.targetType} - "${record.snippet}"`,
+            required: true,
+            options: [
+              { label: 'Removed', value: encodeFormContextValue('removed', token) },
+              { label: 'Approved', value: encodeFormContextValue('approved', token) },
+            ],
+            defaultValue: [encodeFormContextValue('removed', token)],
+          })),
         },
-        data: { decisionAction: encodeFormContextValue('removed', token) },
+        data: { trainingToken: token },
       },
     });
   });
 
   app.post('/internal/form/training-submit', async (c) => {
     const body = await c.req.json<TrainingAnswerForm>();
-    const decodedAction = decodeFormContextValue(firstFormValue(body.decisionAction));
-    const answer = normalizeDecisionActionValue(decodedAction.value);
-    const rawContext = decodedAction.context ? await redis.get(trainingContextKey(decodedAction.context)) : null;
-    const trainingContext = normalizeTrainingContext(parseJsonObject(rawContext));
-    if (!answer || !trainingContext) return c.json<UiResponse>({ showToast: 'ModCase training context expired. Re-open training mode.' });
+    const token = decodeFormContextValue(firstFormValue(body.case_0)).context;
+    const session = normalizeTrainingContext(parseJsonObject(token ? await redis.get(trainingContextKey(token)) : null));
+    if (!token || !session) return c.json<UiResponse>({ showToast: 'ModCase calibration context expired. Re-open training mode.' });
 
-    const record = parseJsonObject(await redis.get(decisionKey(trainingContext.decisionId))) as DecisionRecord | null;
-    if (!record) return c.json<UiResponse>({ showToast: 'ModCase could not load that training example.' });
+    let correct = 0;
+    const lines: string[] = [];
+    for (let index = 0; index < session.decisionIds.length; index += 1) {
+      const answer = normalizeDecisionActionValue(decodeFormContextValue(firstFormValue(body[`case_${index}`])).value);
+      const record = parseJsonObject(await redis.get(decisionKey(session.decisionIds[index]))) as DecisionRecord | null;
+      if (!record) continue;
+      const matched = answer === record.action;
+      if (matched) correct += 1;
+      lines.push(`Case ${index + 1}: you said ${answer ?? 'nothing'}, team ${record.action} - ${matched ? 'match' : 'differ'}${record.internalNote ? ` (note: ${record.internalNote})` : ''}.`);
+    }
 
-    const correct = answer === record.action;
     const result = [
-      correct ? 'Correct.' : 'Different from team precedent.',
-      `Team action: ${record.action}`,
-      `Reason: ${labelFor(record.reasonLabel)}`,
-      record.internalNote ? `Note: ${record.internalNote}` : undefined,
-    ]
-      .filter(Boolean)
-      .join('\n');
+      `You matched the team on ${correct} of ${session.decisionIds.length}.`,
+      'This is calibration feedback only - ModCase does not store per-moderator scores.',
+      '',
+      ...lines,
+    ].join('\n');
 
     return c.json<UiResponse>({
       showForm: {
         name: 'modcaseSummaryAck',
         form: {
-          title: 'ModCase training result',
+          title: 'ModCase calibration result',
           acceptLabel: 'Close',
           fields: [
             {
               type: 'paragraph',
               name: 'trainingResult',
-              label: 'Team precedent',
+              label: 'How you compared to team precedent',
               defaultValue: result,
               disabled: true,
               lineHeight: 14,

@@ -525,37 +525,50 @@ describe('Devvit route behavior', () => {
     });
   });
 
-  it('runs training mode against a precedent example without storing moderator scores', async () => {
-    const id = 'training:1';
-    strings.set(
-      decisionKey(id),
-      JSON.stringify({
-        decisionId: id,
-        subreddit: 'example',
-        targetType: 'comment',
-        targetHash: 'training-h',
-        action: 'removed',
-        reasonLabel: 'harassment_abuse',
-        timestamp: Date.parse('2026-05-24T12:00:00.000Z'),
-        source: 'demo_seed',
-        snippet: 'personal attack',
-      }),
-    );
-    sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [{ member: id, score: Date.parse('2026-05-24T12:00:00.000Z') }]);
+  it('runs a multi-case calibration session and scores it without storing moderator scores', async () => {
+    const now = Date.parse('2026-05-24T12:00:00.000Z');
+    const cases = [
+      { id: 'tr:newer', action: 'approved', snippet: 'sharp but fair disagreement', score: now + 1000 },
+      { id: 'tr:older', action: 'removed', snippet: 'personal attack on another user', score: now },
+    ];
+    cases.forEach((entry, i) => {
+      strings.set(
+        decisionKey(entry.id),
+        JSON.stringify({
+          decisionId: entry.id,
+          subreddit: 'example',
+          targetType: 'comment',
+          targetHash: `training-h-${i}`,
+          action: entry.action,
+          reasonLabel: 'harassment_abuse',
+          timestamp: entry.score,
+          source: 'demo_seed',
+          snippet: entry.snippet,
+        }),
+      );
+      sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [
+        ...sortedItems(idxKey('example', 'comment', 'harassment_abuse')),
+        { member: entry.id, score: entry.score },
+      ]);
+    });
 
     const open = await postJson('/internal/menu/training', { subredditName: 'r/Example' });
     expect(open.showForm.name).toBe('modcaseTrainingForm');
-    expect(open.showForm.form.description).toContain('personal attack');
-    const encodedAnswer = open.showForm.form.fields[0].defaultValue[0];
-    const token = String(encodedAnswer).split('::modcasectx::')[1];
-    expect(JSON.parse(strings.get(trainingContextKey(token)) ?? '{}')).toMatchObject({ decisionId: id, subreddit: 'example' });
+    expect(open.showForm.form.fields).toHaveLength(2);
+    expect(JSON.stringify(open.showForm.form.fields)).toContain('personal attack on another user');
 
-    const result = await postJson('/internal/form/training-submit', {
-      decisionAction: [encodedAnswer],
+    const token = String(open.showForm.form.fields[0].options[0].value).split('::modcasectx::')[1];
+    expect(JSON.parse(strings.get(trainingContextKey(token)) ?? '{}')).toMatchObject({ subreddit: 'example' });
+
+    // Answer "removed" for every case. Newest (tr:newer, approved) is case_0 -> differ; tr:older (removed) -> match.
+    const body: Record<string, string[]> = {};
+    open.showForm.form.fields.forEach((field: any) => {
+      body[field.name] = [field.options.find((option: any) => option.label === 'Removed').value];
     });
+    const result = await postJson('/internal/form/training-submit', body);
 
-    expect(result.showForm.form.fields[0].defaultValue).toContain('Correct.');
-    expect(result.showForm.form.fields[0].defaultValue).toContain('Team action: removed');
+    expect(result.showForm.form.fields[0].defaultValue).toContain('You matched the team on 1 of 2.');
+    expect(result.showForm.form.fields[0].defaultValue).toContain('does not store per-moderator scores');
   });
 
   it('shows a copyable privacy-conscious export report', async () => {
