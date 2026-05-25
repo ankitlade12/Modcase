@@ -57,6 +57,19 @@ export function formatPrecedentSummary(
 ): string {
   const lookupLimit = options.lookupLimit ?? DEFAULT_LOOKUP_LIMIT;
   const displayLimit = options.displayLimit ?? DEFAULT_DISPLAY_LIMIT;
+
+  if (records.length === 0) {
+    return [
+      'ModCase precedent',
+      `Reason: ${labelFor(reasonLabel)}`,
+      `Content type: ${targetType}`,
+      '',
+      `No team precedent yet for ${labelFor(reasonLabel)} ${targetType}s.`,
+      `This panel fills in automatically as moderators approve or remove ${targetType}s for this reason.`,
+      'To see it working now, run "ModCase: Seed demo data" from the subreddit menu.',
+    ].join('\n');
+  }
+
   const s = summarize(records, options.minSignalSample);
   const rankedRecords = rankRecordsForLookup(options.lookupText, records);
   const exactFingerprint = contentFingerprint(options.lookupText);
@@ -74,13 +87,14 @@ export function formatPrecedentSummary(
     `Reason: ${labelFor(reasonLabel)}`,
     `Content type: ${targetType}`,
     '',
+    formatSignal(s),
+    formatRecentTrend(records),
+    '',
     `Counts from last ${lookupLimit} matching decisions:`,
     `Removed: ${s.removed}`,
     `Approved: ${s.approved}`,
     `Total: ${s.total}`,
     '',
-    formatSignal(s),
-    formatRecentTrend(records),
     formatKeywordAssist(options.lookupText, rankedRecords),
     exactFingerprint ? `Fingerprint matches: ${exactMatches} exact normalized text match${exactMatches === 1 ? '' : 'es'} in this bucket.` : 'Fingerprint matches: no current text available.',
     '',

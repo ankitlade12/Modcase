@@ -61,4 +61,24 @@ describe('precedent summaries', () => {
     expect(text).toContain('2. removed comment');
     expect(text).not.toContain('3. approved comment');
   });
+
+  it('leads with the verdict before the raw counts', () => {
+    const text = formatPrecedentSummary(
+      'harassment_abuse',
+      'comment',
+      [0, 1, 2, 3, 4].map((i) => record('removed', i)),
+      { lookupLimit: 50, minSignalSample: 5 },
+    );
+
+    expect(text).toContain('Settled team pattern: 100% removed.');
+    expect(text.indexOf('Settled team pattern')).toBeLessThan(text.indexOf('Counts from last'));
+  });
+
+  it('shows a teaching empty state when there is no history', () => {
+    const text = formatPrecedentSummary('low_effort', 'post', [], { lookupLimit: 50 });
+
+    expect(text).toContain('No team precedent yet for Low Effort posts.');
+    expect(text).toContain('ModCase: Seed demo data');
+    expect(text).not.toContain('Counts from last');
+  });
 });
