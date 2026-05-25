@@ -5,6 +5,7 @@ import { makeId, stableHash } from './modcase/hash.js';
 import { decisionKey, idxKey, lookupContextKey, rawLogKey, ruleMappingKey, settingsKey, trainingContextKey } from './modcase/keys.js';
 import { buildDecisionFromModAction, extractSubreddit, targetContextFromMenu } from './modcase/payload.js';
 import { suggestReasonFromText } from './modcase/suggest.js';
+import { removalMessageFor } from './modcase/messages.js';
 import {
   buildCommunityProfile,
   compareProfiles,
@@ -549,6 +550,35 @@ function formatWikiPage(subreddit: string, buckets: BucketSummary[], now = Date.
     formatCommunityConstitution(subreddit, buckets),
     '',
     formatTransparencyReport(subreddit, buckets, now),
+  ].join('\n');
+}
+
+function formatRemovalGuide(subreddit: string, buckets: BucketSummary[]): string {
+  const notesByReason = new Map<ReasonLabel, string[]>();
+  for (const bucket of buckets) {
+    for (const record of bucket.records) {
+      if (!record.internalNote) continue;
+      const seen = notesByReason.get(bucket.reasonLabel) ?? [];
+      if (seen.length < 2 && !seen.includes(record.internalNote)) seen.push(record.internalNote);
+      notesByReason.set(bucket.reasonLabel, seen);
+    }
+  }
+
+  const sections = REASON_LABELS.filter((reason) => reason.value !== 'unknown_reason').map((reason) => {
+    const notes = notesByReason.get(reason.value) ?? [];
+    return [
+      `${reason.label}:`,
+      `  Suggested message: ${removalMessageFor(reason.value)}`,
+      ...notes.map((note) => `  Team note seen: "${note}"`),
+    ].join('\n');
+  });
+
+  return [
+    'ModCase removal message guide',
+    `Subreddit: r/${subreddit}`,
+    'Mod-facing wording to copy when you remove content, so the team explains removals consistently. ModCase never sends these and never messages users.',
+    '',
+    sections.join('\n\n'),
   ].join('\n');
 }
 
@@ -1454,6 +1484,7 @@ export function createModCaseApp({
                 { label: 'Audit snapshot', value: encodeFormContextValue('audit', subreddit) },
                 { label: 'Export report', value: encodeFormContextValue('export', subreddit) },
                 { label: 'Export community profile', value: encodeFormContextValue('profile', subreddit) },
+                { label: 'Removal message guide', value: encodeFormContextValue('removal-guide', subreddit) },
               ],
               defaultValue: [encodeFormContextValue('rule-health', subreddit)],
             },
@@ -1527,6 +1558,10 @@ export function createModCaseApp({
       case 'profile':
         title = 'ModCase community profile';
         report = formatProfileExport(buildCommunityProfile(subreddit, buckets));
+        break;
+      case 'removal-guide':
+        title = 'ModCase removal message guide';
+        report = formatRemovalGuide(subreddit, buckets);
         break;
       default:
         return c.json<UiResponse>({ showToast: 'ModCase could not identify that report.' });

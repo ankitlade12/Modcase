@@ -819,6 +819,13 @@ describe('Devvit route behavior', () => {
     expect(page).toContain('moderation constitution');
   });
 
+  it('shows the removal message guide with mod-facing wording', async () => {
+    const result = await postJson('/internal/form/insights-submit', { report: ['removal-guide::modcasectx::example'] });
+    expect(result.showForm.form.fields[0].defaultValue).toContain('ModCase removal message guide');
+    expect(result.showForm.form.fields[0].defaultValue).toContain('Suggested message:');
+    expect(result.showForm.form.fields[0].defaultValue).toContain('never messages users');
+  });
+
   it('fetches item text from Reddit when the menu payload omits it', async () => {
     strings.set(settingsKey('example'), JSON.stringify({ decisionRetentionDays: 180, lookupLimit: 50, reasonSuggestionEnabled: true, updatedAt: 1 }));
 

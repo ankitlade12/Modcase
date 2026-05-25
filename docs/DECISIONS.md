@@ -77,3 +77,9 @@ ModCase can optionally pre-select a likely reason label in the precedent picker 
 Status: active
 
 Devvit storage is per-install, so ModCase has no shared cross-subreddit database. Cross-community comparison is therefore opt-in and transport-free: a subreddit exports an aggregate, anonymized "community profile" (per reason/content-type bucket counts and majority action, only for buckets with at least five decisions) that another moderator pastes in to compare norms. Profiles carry no usernames, moderator identities, raw content, or target ids, and the minimum-sample floor keeps tiny buckets out (k-anonymity on bucket size).
+
+## D-014: Removal-message guide is mod-facing only
+
+Status: active
+
+The removal message guide suggests consistent, copyable wording a moderator can use when removing content, and surfaces internal notes the team has already used for that reason. ModCase never sends these messages and never contacts users - it is a mod-facing reference that promotes consistent explanations. This deliberately offers wording (which the v0 freeze cautioned against) but stays within posture by never auto-messaging and never exposing anything to users.
