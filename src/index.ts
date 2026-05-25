@@ -15,7 +15,7 @@ const app = createModCaseApp({
   redis,
   reddit,
   getSubredditName: currentSubredditName,
-  captureRawPayloadsForDebug: true, // Turn OFF before hackathon submission.
+  captureRawPayloadsForDebug: false, // Raw debug payload capture is OFF for submission.
 });
 
 const server = createServer((req, res) => handleHonoRequest(app, req, res));
