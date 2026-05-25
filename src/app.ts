@@ -5,7 +5,7 @@ import { makeId, stableHash } from './modcase/hash.js';
 import { decisionKey, idxKey, lookupContextKey, rawLogKey, ruleMappingKey, settingsKey, trainingContextKey } from './modcase/keys.js';
 import { buildDecisionFromModAction, extractSubreddit, targetContextFromMenu } from './modcase/payload.js';
 import { REASON_LABELS, labelFor, normalizeReasonValue, type ReasonLabel } from './modcase/reasons.js';
-import { DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
+import { countBucketDivergences, DEFAULT_LOOKUP_LIMIT, DEFAULT_MIN_SIGNAL_SAMPLE, formatPrecedentSummary, formatSignal, summarize } from './modcase/summary.js';
 import {
   DEFAULT_SETTINGS,
   LOOKUP_LIMIT_OPTIONS,
@@ -453,6 +453,29 @@ function formatSecondReviewReport(subreddit: string, settings: ModCaseSettings, 
           })
           .join('\n\n')
       : 'No aggregate buckets currently need second-review attention.',
+  ].join('\n');
+}
+
+function formatConsistencyDigest(subreddit: string, buckets: BucketSummary[]): string {
+  const rows = buckets
+    .map((bucket) => ({ bucket, divergence: countBucketDivergences(bucket.records) }))
+    .filter((row) => row.divergence.divergent > 0)
+    .sort((a, b) => b.divergence.divergent - a.divergence.divergent);
+  const totalDivergent = rows.reduce((sum, row) => sum + row.divergence.divergent, 0);
+  const totalDecisions = buckets.reduce((sum, bucket) => sum + bucket.records.length, 0);
+
+  return [
+    'ModCase consistency digest',
+    `Subreddit: r/${subreddit}`,
+    '',
+    `Recent decisions that went against settled or leaning precedent: ${totalDivergent} of ${totalDecisions}.`,
+    'A decision is counted when, at the time it was made, the team already leaned the other way for that reason and content type.',
+    '',
+    rows.length
+      ? rows.map((row) => `${row.bucket.targetType} / ${labelFor(row.bucket.reasonLabel)}: ${row.divergence.divergent} against-precedent of ${row.divergence.total}`).join('\n')
+      : 'No recent decisions went against settled or leaning precedent. The team is either consistent or still building history.',
+    '',
+    'This digest is team-level and excludes usernames, moderator identities, and raw content.',
   ].join('\n');
 }
 
@@ -1310,6 +1333,7 @@ export function createModCaseApp({
               required: true,
               options: [
                 { label: 'Rule health', value: encodeFormContextValue('rule-health', subreddit) },
+                { label: 'Consistency digest', value: encodeFormContextValue('consistency', subreddit) },
                 { label: 'Rule trends', value: encodeFormContextValue('rule-trends', subreddit) },
                 { label: 'Contested rules', value: encodeFormContextValue('contested-rules', subreddit) },
                 { label: 'Second review', value: encodeFormContextValue('second-review', subreddit) },
@@ -1339,6 +1363,10 @@ export function createModCaseApp({
     let title = 'ModCase team insights';
     let report: string;
     switch (reportKey) {
+      case 'consistency':
+        title = 'ModCase consistency digest';
+        report = formatConsistencyDigest(subreddit, buckets);
+        break;
       case 'rule-health':
         title = 'ModCase rule health';
         report = formatRuleHealthReport(subreddit, settings, buckets);

@@ -644,4 +644,35 @@ describe('Devvit route behavior', () => {
     const unknown = await postJson('/internal/form/insights-submit', { report: ['bogus::modcasectx::example'] });
     expect(unknown.showToast).toContain('ModCase could not identify that report');
   });
+
+  it('reports against-precedent decisions in the consistency digest', async () => {
+    const now = Date.parse('2026-05-24T12:00:00.000Z');
+    const actions = ['removed', 'removed', 'removed', 'removed', 'removed', 'approved'] as const;
+    actions.forEach((action, index) => {
+      const id = `divergence:${index}`;
+      const record = {
+        decisionId: id,
+        subreddit: 'example',
+        targetType: 'comment',
+        targetHash: `divergence-h-${index}`,
+        action,
+        reasonLabel: 'harassment_abuse',
+        timestamp: now + index,
+        source: 'demo_seed',
+      };
+      strings.set(decisionKey(id), JSON.stringify(record));
+      sortedSets.set(idxKey('example', 'comment', 'harassment_abuse'), [
+        ...sortedItems(idxKey('example', 'comment', 'harassment_abuse')),
+        { member: id, score: now + index },
+      ]);
+    });
+
+    const open = await postJson('/internal/menu/team-insights', { subredditName: 'r/Example' });
+    expect(JSON.stringify(open.showForm.form.fields[0].options)).toContain('consistency');
+
+    const digest = await postJson('/internal/form/insights-submit', { report: ['consistency::modcasectx::example'] });
+    expect(digest.showForm.name).toBe('modcaseSummaryAck');
+    expect(digest.showForm.form.fields[0].defaultValue).toContain('ModCase consistency digest');
+    expect(digest.showForm.form.fields[0].defaultValue).toContain('comment / Harassment / Abuse: 1 against-precedent of 6');
+  });
 });
