@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node 22.2+ for parity with the current Reddit Devvit quickstart
+- Node 22.2+ for parity with the current Reddit Devvit quickstart (`package.json` enforces `>=22`)
 - npm 10+
 - Devvit CLI auth for your Reddit developer account
 
@@ -46,7 +46,7 @@ The current app slug is `modcase-v1`; use that name if the browser asks you to n
 
 ## Payload Verification
 
-During early testing, `CAPTURE_RAW_PAYLOADS_FOR_DEBUG` is set to `true` in `src/index.ts`.
+During early testing, `captureRawPayloadsForDebug` is set to `true` in the `createModCaseApp` options in `src/index.ts`.
 
 Verify these fields from Devvit logs:
 

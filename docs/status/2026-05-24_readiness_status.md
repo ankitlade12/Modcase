@@ -21,7 +21,7 @@ ModCase has a runnable Devvit starter scaffolded into a product-style repo. The 
 - Real `onModAction` payload field names in the target Devvit environment.
 - `zRange(..., { by: 'rank' })` ordering in Redis.
 - Final app account name for automated actor filtering.
-- Submission setting for `CAPTURE_RAW_PAYLOADS_FOR_DEBUG`.
+- Submission setting for `captureRawPayloadsForDebug` in `src/index.ts`.
 - npm audit currently reports production dependency findings through Devvit's `@devvit/protos -> protobufjs` chain with no fix available from the installed Devvit packages.
 - Real approve/remove payloads still need to be captured from manual moderation actions.
 

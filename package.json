@@ -5,7 +5,7 @@
   "description": "Devvit Web app for moderator precedent lookup from human moderation decisions.",
   "type": "module",
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=10"
   },
   "scripts": {

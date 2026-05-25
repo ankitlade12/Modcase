@@ -31,8 +31,8 @@ CLI status from this pass:
 
 ## Before Submission
 
-- Set `CAPTURE_RAW_PAYLOADS_FOR_DEBUG = false`.
+- Set `captureRawPayloadsForDebug` to `false` in the `createModCaseApp` options in `src/index.ts`.
 - Confirm Redis sorted-set ordering.
-- Confirm app account names in `APP_ACCOUNT_NAMES`.
+- Confirm app account names in `DEFAULT_APP_ACCOUNT_NAMES` (`src/modcase/payload.ts`).
 - Run `npm run check` and `npm run build`.
 - Review npm audit findings from the Devvit dependency chain if security review is part of submission.
