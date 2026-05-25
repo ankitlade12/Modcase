@@ -64,6 +64,9 @@ const reddit = {
     if (id === 't1_spam') return { body: 'Buy now discount promo at https://mysite.com' };
     return {};
   },
+  async updateWikiPage(options: { subredditName: string; page: string; content: string; reason?: string }) {
+    strings.set(`wiki:${options.subredditName}:${options.page}`, options.content);
+  },
 };
 
 const app = createModCaseApp({ redis, reddit, getSubredditName: () => null });
@@ -791,6 +794,16 @@ describe('Devvit route behavior', () => {
     expect(sortedItems(idxKey('example', 'comment', 'harassment_abuse'))).toEqual([{ member: realId, score: 1 }]);
     expect(strings.get(decisionKey('demo:example:0'))).toBeUndefined();
     expect(strings.get(decisionKey(realId))).toBeDefined();
+  });
+
+  it('publishes a how-we-moderate summary to the subreddit wiki', async () => {
+    await postJson('/internal/menu/seed-demo', { subredditName: 'r/Example' });
+    const result = await postJson('/internal/menu/publish-wiki', { subredditName: 'r/Example' });
+
+    expect(result.showToast).toContain('published');
+    const page = strings.get('wiki:example:modcase') ?? '';
+    expect(page).toContain('How r/example moderates');
+    expect(page).toContain('moderation constitution');
   });
 
   it('fetches item text from Reddit when the menu payload omits it', async () => {

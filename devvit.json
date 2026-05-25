@@ -84,6 +84,13 @@
         "endpoint": "/internal/menu/clear-demo"
       },
       {
+        "label": "ModCase: Publish to wiki",
+        "description": "Publish the living 'how we moderate' summary to the subreddit wiki (page: modcase).",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/publish-wiki"
+      },
+      {
         "label": "ModCase: Debug log count",
         "description": "Show how many raw ModAction payloads were captured for verification.",
         "location": "subreddit",
