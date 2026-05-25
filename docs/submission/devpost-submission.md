@@ -7,7 +7,7 @@
 
 ## Required submission fields
 
-- **App listing:** `[link to your app on developer.reddit.com after `devvit upload`]`
+- **App listing:** https://developers.reddit.com/apps/modcase-v1 (uploaded; app version 0.0.2)
 - **Live test post:** `[link to a Reddit post in a public subreddit running ModCase]`
 - **Team Reddit usernames:** `[u/your-username, ...]`
 
