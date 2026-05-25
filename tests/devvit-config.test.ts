@@ -14,7 +14,7 @@ describe('devvit.json', () => {
   });
 
   it('keeps moderator-facing actions locked to moderators', () => {
-    expect(devvitConfig.menu.items).toHaveLength(17);
+    expect(devvitConfig.menu.items).toHaveLength(9);
     for (const item of devvitConfig.menu.items) {
       expect(item.forUserType).toBe('moderator');
       expect(item.endpoint).toMatch(/^\/internal\//);
@@ -28,6 +28,7 @@ describe('devvit.json', () => {
       modcaseSettingsForm: '/internal/form/settings-submit',
       modcaseUnknownCleanupForm: '/internal/form/unknown-cleanup-submit',
       modcaseTrainingForm: '/internal/form/training-submit',
+      modcaseInsightsPicker: '/internal/form/insights-submit',
       modcaseSummaryAck: '/internal/form/summary-ack',
     });
   });

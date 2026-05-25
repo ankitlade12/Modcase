@@ -28,74 +28,18 @@
         "endpoint": "/internal/menu/record-correction"
       },
       {
+        "label": "ModCase: Team insights",
+        "description": "Open the aggregate report picker: rule health, trends, contested rules, second review, drift, constitution, transparency, audit, and export.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/team-insights"
+      },
+      {
         "label": "ModCase: Sync rules",
         "description": "Import subreddit rules into the controlled ModCase reason-label map.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/sync-rules"
-      },
-      {
-        "label": "ModCase: Audit snapshot",
-        "description": "Show recent indexed decision buckets for this install.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/audit-snapshot"
-      },
-      {
-        "label": "ModCase: Rule trends",
-        "description": "Show aggregate remove/approve trends by content type and controlled reason.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/rule-trends"
-      },
-      {
-        "label": "ModCase: Rule health",
-        "description": "Summarize settled, leaning, contested, limited, and unknown-reason areas.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/rule-health"
-      },
-      {
-        "label": "ModCase: Contested rules",
-        "description": "Show reason buckets where recent team precedent is split or only weakly leaning.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/contested-rules"
-      },
-      {
-        "label": "ModCase: Second review",
-        "description": "Show ambiguous aggregate buckets that may deserve another moderator read.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/second-review"
-      },
-      {
-        "label": "ModCase: Rule drift",
-        "description": "Show rule areas where recent outcomes differ from older recent outcomes.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/rule-drift"
-      },
-      {
-        "label": "ModCase: Constitution",
-        "description": "Generate a living summary of how this community usually moderates.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/community-constitution"
-      },
-      {
-        "label": "ModCase: Export report",
-        "description": "Show a copyable privacy-conscious aggregate decision report.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/export-report"
-      },
-      {
-        "label": "ModCase: Transparency summary",
-        "description": "Generate a shareable aggregate moderation summary for the community.",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/transparency-report"
       },
       {
         "label": "ModCase: Unknown cleanup",
@@ -140,6 +84,7 @@
     "modcaseSettingsForm": "/internal/form/settings-submit",
     "modcaseUnknownCleanupForm": "/internal/form/unknown-cleanup-submit",
     "modcaseTrainingForm": "/internal/form/training-submit",
+    "modcaseInsightsPicker": "/internal/form/insights-submit",
     "modcaseSummaryAck": "/internal/form/summary-ack"
   },
   "triggers": {
