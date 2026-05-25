@@ -28,7 +28,7 @@ export PATH=/opt/homebrew/bin:$PATH
 npm run dev
 ```
 
-Use the playtest URL printed by the CLI. The current generated subreddit is `r/modcase_v1_dev`. After install, seed demo data from the subreddit menu and use the post/comment menu to check precedent. The subreddit menu also exposes `ModCase: Team insights` (consistency digest, rule health, trends, contested rules, second review, drift, community constitution, transparency summary, audit snapshot, export report, and export community profile), plus `ModCase: Compare community`, rule sync, unknown cleanup, training mode, clear demo data, and settings.
+Use the playtest URL printed by the CLI. The current generated subreddit is `r/modcase_v1_dev`. After install, seed demo data from the subreddit menu and use the post/comment menu to check precedent. The subreddit menu also exposes `ModCase: Team insights` (consistency digest, rule health, trends, contested rules, second review, drift, community constitution, transparency summary, audit snapshot, export report, export community profile, and removal message guide), plus `ModCase: Compare community`, `Publish to wiki`, rule sync, unknown cleanup, training mode, clear demo data, and settings.
 
 If playtest reports that the app does not exist yet:
 

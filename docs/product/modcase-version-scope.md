@@ -34,6 +34,11 @@
 - Consistency digest reports how often recent decisions went against the team's own settled or leaning precedent, derived from stored records and kept team-level only.
 - Opt-in reason suggestion can pre-select a likely reason label in the picker from the item text (keyword-based, off by default, suggestion-only).
 - Cross-community comparison exports an aggregate, anonymized community profile that another moderator can paste in to compare norms (opt-in, no shared backend, minimum five decisions per shared bucket).
+- Closest-past-case lookup surfaces the single most similar prior decision (by keyword/fingerprint) alongside the precedent stats.
+- Trended team consistency index reports the share of recent decisions that followed established precedent, this week vs last.
+- Publish to wiki posts a living "how we moderate" page (constitution + transparency) to the subreddit wiki on demand.
+- Calibration mode runs a multi-case quiz that scores a moderator against team precedent ephemerally (no per-moderator storage).
+- Removal message guide suggests consistent, mod-facing removal wording per reason (never auto-sent, never shown to users).
 
 ## Still Out Of Scope
 

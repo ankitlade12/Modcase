@@ -7,7 +7,7 @@
 
 ## Required submission fields
 
-- **App listing:** https://developers.reddit.com/apps/modcase-v1 (uploaded; app version 0.0.2)
+- **App listing:** https://developers.reddit.com/apps/modcase-v1 (uploaded; latest version live on r/modcase_v1_dev)
 - **Live test post:** `[link to a Reddit post in a public subreddit running ModCase]`
 - **Team Reddit usernames:** `[u/your-username, ...]`
 
@@ -24,7 +24,9 @@ ModCase is a consistency layer for Reddit moderation. Most moderation tools reme
 
 **What a moderator sees:**
 - **Check precedent** (post/comment menu): pick the rule/reason; ModCase shows the team's precedent for that reason and content type - a settled / leaning / contested verdict up front, the removed/approved counts, a recent-trend line, and the most recent examples (keyword-assisted ordering when the item has text).
-- **Team insights** (one subreddit menu) opens an aggregate report picker: consistency digest, rule health, rule trends, contested rules, second-review suggestions, rule drift, community constitution, transparency summary, audit snapshot, export report, and export community profile.
+- **Team insights** (one subreddit menu) opens an aggregate report picker: consistency digest (with a trended team consistency index), rule health, rule trends, contested rules, second-review suggestions, rule drift, community constitution, transparency summary, audit snapshot, export report, export community profile, and a mod-facing removal message guide.
+- **Closest past case**: when the item has text, the precedent panel highlights the single most similar prior decision and what the team did.
+- **Publish to wiki / calibration mode**: keep a living "how we moderate" wiki page current, and let new mods calibrate against team precedent with an ephemeral, non-stored score.
 - **Consistency digest** highlights how often recent decisions went against the team's own settled or leaning precedent - the institutional-memory signal that no user-centric tool surfaces. Team-level only.
 - **Compare community** lets a team export an anonymized, k-anonymous aggregate profile and paste another community's profile to compare norms - cross-community insight with no shared backend and no raw data.
 - **Opt-in reason suggestion** (off by default) can pre-select a likely reason in the picker from the item's text; the moderator always confirms or changes it.
@@ -32,7 +34,7 @@ ModCase is a consistency layer for Reddit moderation. Most moderation tools reme
 
 **What it deliberately does not do:** no AI auto-moderation, no automatic enforcement, no user risk scores, no per-moderator tracking or leaderboards. Every report is aggregate and team-level. The moderator always makes the call; ModCase only surfaces precedent.
 
-**Built on:** Reddit's Developer Platform (Devvit Web), Hono, Redis, TypeScript. Covered by 59 automated tests (`npm run check`).
+**Built on:** Reddit's Developer Platform (Devvit Web), Hono, Redis, TypeScript. Covered by 68 automated tests (`npm run check`).
 
 ## Project Impact
 
@@ -56,7 +58,7 @@ ModCase helps moderation teams make more consistent decisions, onboard new moder
 
 - [x] `captureRawPayloadsForDebug` set to `false` in `src/index.ts`.
 - [ ] Confirm `DEFAULT_APP_ACCOUNT_NAMES` in `src/modcase/payload.ts` includes the published app's account name.
-- [x] `npm run check` passes (config + typecheck + 59 tests).
+- [x] `npm run check` passes (config + typecheck + 68 tests).
 - [ ] `devvit upload` and capture the app listing link.
 - [ ] Install on a public test subreddit and capture a live post link.
 - [ ] List team Reddit usernames.
