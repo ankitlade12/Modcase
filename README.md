@@ -7,7 +7,7 @@
 [![Redis](https://img.shields.io/badge/Redis-Devvit-DC382D.svg)](https://developers.reddit.com/docs/capabilities/redis)
 [![Vitest](https://img.shields.io/badge/Vitest-68%20passing-6E9F18.svg)](https://vitest.dev/)
 [![Best New Mod Tool](https://img.shields.io/badge/Hackathon-Best%20New%20Mod%20Tool-FF4500.svg)](https://mod-tools-migration.devpost.com/)
-[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-yellow.svg)](https://opensource.org/license/bsd-3-clause)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Most moderation tools remember users. ModCase remembers decisions.**
 > ModCase doesn't judge content, score users, or take enforcement actions. It gives a moderation team its own institutional memory — and surfaces it at the moment someone is about to decide.
@@ -382,7 +382,7 @@ make check                       # lint + tests (matches the gate)
 
 ## License
 
-[BSD-3-Clause](https://opensource.org/license/bsd-3-clause) — permissive; the Reddit Mod Tools and Migrated Apps Hackathon does not mandate a specific license.
+[MIT](./LICENSE) — permissive; the Reddit Mod Tools and Migrated Apps Hackathon does not mandate a specific license.
 
 ---
 
