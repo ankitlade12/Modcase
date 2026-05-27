@@ -290,7 +290,7 @@ reddit/
 │       └── types.ts             # shared domain types
 ├── tests/                       # 68 Vitest tests (payload, reasons, summary, suggest, profile, messages, routes, devvit-config)
 ├── devvit.json                  # menus (12), forms (8), onModAction trigger, permissions
-├── docs/                        # ARCHITECTURE, DECISIONS, product, submission
+├── docs/                        # DECISIONS, submission
 ├── scripts/verify-devvit-config.mjs   # Devvit config contract check
 ├── package.json · vite.config.ts · vitest.config.ts · tsconfig.json
 └── Makefile                     # setup / check / build / playtest
