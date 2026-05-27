@@ -39,83 +39,54 @@ Installed via `devvit upload` → `devvit install r/<subreddit>`. All moderator-
 
 ### High-Level Workflow
 
-```mermaid
-graph LR
-    subgraph "STEP 1: A HUMAN DECIDES"
-        MA["Moderator approves /<br/>removes a post or comment"] --> TR["onModAction trigger<br/>/internal/triggers/on-mod-action"]
-    end
-
-    subgraph "STEP 2: CAPTURE (privacy-conscious)"
-        TR --> FILT["Filter Automod / bots /<br/>app account"]
-        FILT --> NORM["Normalize: action,<br/>target type, reason label,<br/>hashed target id"]
-        NORM --> STORE["Redis: DecisionRecord<br/>+ reason index (sorted set)"]
-    end
-
-    subgraph "STEP 3: LOOKUP BEFORE DECIDING"
-        STORE --> PICK["Moderator picks a reason<br/>on a fresh item"]
-        PICK --> SUM["summarize() over recent<br/>matching decisions"]
-        SUM --> VERD["Verdict: settled / leaning /<br/>contested + closest past case"]
-    end
-
-    subgraph "STEP 4: KEEP THE TEAM HONEST"
-        STORE --> DIG["Consistency digest<br/>+ trended index"]
-        DIG --> DRIFT["Drift / contested /<br/>second-review queues"]
-        STORE --> XCOMM["Cross-community compare<br/>(anonymized profiles)"]
-    end
-
-    style MA fill:#e1f5ff
-    style STORE fill:#fff4e1
-    style VERD fill:#c8e6c9
-    style DIG fill:#fce4ec
-    style XCOMM fill:#f3e5f5
+```text
+STEP 1 — A HUMAN DECIDES
+  Moderator approves or removes a post / comment
+        |  onModAction trigger
+        v
+STEP 2 — CAPTURE  (privacy-conscious)
+  filter Automod / bots / app account
+  -> normalize: action, target type, reason label, salted target hash
+  -> store DecisionRecord + reason index in Redis
+        |
+        v
+STEP 3 — LOOKUP BEFORE DECIDING
+  moderator picks a reason on a fresh item
+  -> summarize recent matching decisions
+  -> VERDICT: settled / leaning / contested  (+ closest past case)
+        |
+        v
+STEP 4 — KEEP THE TEAM HONEST
+  consistency digest + trended index
+  drift / contested / second-review queues
+  cross-community compare (anonymized profiles)
 ```
 
 ### System Architecture
 
-```mermaid
-graph TB
-    REDDIT["REDDIT<br/>subreddit / post / comment menus<br/>+ onModAction trigger<br/>(moderator-only)"]
-
-    subgraph "DEVVIT WEB (FastMCP-style server)"
-        HTTP["devvit/http.ts<br/>Hono ⇄ Devvit Node-server adapter"]
-        ROUTES["app.ts — Hono routes<br/>trigger · 12 menu actions ·<br/>8 forms · report formatters"]
-    end
-
-    subgraph "CORE MODULES (src/modcase)"
-        PAY["payload.ts<br/>extract + filter + build decision"]
-        REASON["reasons.ts<br/>7 controlled labels + aliases"]
-        SUMM["summary.ts<br/>settled/leaning/contested ·<br/>divergence · consistency index"]
-        KW["keywords.ts + suggest.ts<br/>keyword ranking · opt-in suggestion"]
-        PROF["profile.ts<br/>cross-community profiles"]
-        MSG["messages.ts<br/>mod-facing removal wording"]
-        DEMO["demo.ts · settings.ts · keys.ts ·<br/>hash.ts · fingerprint.ts"]
-    end
-
-    REDIS["REDIS (Devvit)<br/>decision records · reason indexes ·<br/>settings · rule mappings"]
-    WIKI["Subreddit wiki<br/>(opt-in 'how we moderate' page)"]
-
-    REDDIT -->|Streamable HTTP| HTTP
-    HTTP --> ROUTES
-    ROUTES --> PAY
-    ROUTES --> REASON
-    ROUTES --> SUMM
-    ROUTES --> KW
-    ROUTES --> PROF
-    ROUTES --> MSG
-    ROUTES --> DEMO
-
-    PAY --> REDIS
-    SUMM --> REDIS
-    DEMO --> REDIS
-    PROF --> REDIS
-    ROUTES -.->|Publish to wiki| WIKI
-
-    style REDDIT fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
-    style ROUTES fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
-    style SUMM fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
-    style PROF fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    style REDIS fill:#fff4e1,stroke:#f57c00,stroke-width:2px
-    style WIKI fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+```text
+                        REDDIT
+      subreddit / post / comment menus  +  onModAction
+                   (moderator-only)
+                         |  Streamable HTTP
+                         v
+  +---------------------------------------------------+
+  | DEVVIT WEB SERVER                                 |
+  |   devvit/http.ts  - Hono <-> Devvit adapter       |
+  |   app.ts          - trigger, 12 menu actions,     |
+  |                     8 forms, report formatters    |
+  +----------------------------+----------------------+
+                               v
+  +---------------------------------------------------+
+  | CORE MODULES  (src/modcase)                       |
+  |   payload, reasons, summary (verdict /            |
+  |   divergence / consistency index), keywords,      |
+  |   suggest, profile, messages, demo, settings      |
+  +-----------------+---------------------+-----------+
+                    v                     v  (opt-in)
+           REDIS (Devvit)           Subreddit wiki
+   decision records, reason        "how we moderate"
+   indexes, settings, rules         page
 ```
 
 ### Tech Stack
@@ -240,30 +211,25 @@ The money shot is step 2 → step 3: the panel proves the team *leans remove*, a
 
 ### Tool-Call Sequence
 
-```mermaid
-sequenceDiagram
-    participant Mod as Moderator
-    participant Reddit
-    participant ModCase as ModCase (Devvit server)
-    participant Redis
+```text
+Memory builds itself
+  Moderator -> Reddit     approve / remove a comment
+  Reddit    -> ModCase    onModAction
+  ModCase                 filter bots, normalize, hash target
+  ModCase   -> Redis      store DecisionRecord + reason index
 
-    Note over Mod,Redis: Memory builds itself
-    Mod->>Reddit: Approve / remove a comment
-    Reddit->>ModCase: onModAction
-    ModCase->>ModCase: filter bots, normalize, hash target
-    ModCase->>Redis: store DecisionRecord + reason index
+Moderator checks precedent
+  Moderator -> Reddit     menu: ModCase: Check precedent
+  Reddit    -> ModCase    /internal/menu/check-precedent
+  ModCase   -> Redis      recent matching decisions
+  ModCase   -> Moderator  verdict (settled / leaning / contested)
+                          + closest past case + examples
 
-    Note over Mod,Redis: Moderator checks precedent
-    Mod->>Reddit: ••• → ModCase: Check precedent
-    Reddit->>ModCase: /internal/menu/check-precedent
-    ModCase->>Redis: recent matching decisions
-    ModCase-->>Mod: Verdict (settled/leaning/contested)<br/>+ closest past case + examples
-
-    Note over Mod,Redis: Team keeps itself honest
-    Mod->>Reddit: ••• → Team insights → Consistency digest
-    Reddit->>ModCase: /internal/form/insights-submit
-    ModCase->>Redis: all buckets
-    ModCase-->>Mod: divergences + trended consistency index
+Team keeps itself honest
+  Moderator -> Reddit     menu: Team insights -> Consistency digest
+  Reddit    -> ModCase    /internal/form/insights-submit
+  ModCase   -> Redis      all buckets
+  ModCase   -> Moderator  divergences + trended consistency index
 ```
 
 ## Project Structure
