@@ -8,8 +8,8 @@ tmp/
 tmp_screenshots/
 *.tsbuildinfo
 
-# Agent tooling scratch (claude-mem rewrites AGENTS.md with session memory context;
-# canonical agent instructions live in .github/copilot-instructions.md and CLAUDE.md)
+# Agent tooling, local only (Claude Code config + claude-mem AGENTS.md scratch)
+.claude/
 AGENTS.md
 
 # Local environment
