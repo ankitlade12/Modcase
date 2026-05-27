@@ -1,9 +1,0 @@
-node_modules/
-dist/
-.devvit/
-.git/
-.env
-coverage/
-tmp/
-tmp_screenshots/
-*.log

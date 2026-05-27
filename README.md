@@ -290,7 +290,7 @@ reddit/
 │       └── types.ts             # shared domain types
 ├── tests/                       # 68 Vitest tests (payload, reasons, summary, suggest, profile, messages, routes, devvit-config)
 ├── devvit.json                  # menus (12), forms (8), onModAction trigger, permissions
-├── docs/                        # ARCHITECTURE, DECISIONS, product, plans, submission
+├── docs/                        # ARCHITECTURE, DECISIONS, product, submission
 ├── scripts/verify-devvit-config.mjs   # Devvit config contract check
 ├── package.json · vite.config.ts · vitest.config.ts · tsconfig.json
 └── Makefile                     # setup / check / build / playtest
@@ -385,7 +385,5 @@ make check                       # lint + tests (matches the gate)
 [MIT](./LICENSE) — permissive; the Reddit Mod Tools and Migrated Apps Hackathon does not mandate a specific license.
 
 ---
-
-**Built for the Reddit Mod Tools and Migrated Apps Hackathon — Best New Mod Tool** (Devpost, deadline 2026-05-27). Submission path: a Devvit Web app published to developer.reddit.com.
 
 *"Before I decide, show me how our team usually handles this."* — ModCase remembers decisions, so the team stays consistent without remembering people.

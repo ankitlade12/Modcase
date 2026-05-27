@@ -1,13 +1,16 @@
 # ModCase Assistant Context
 
-This repo is a Devvit Web app scaffolded from `modcase_devvit_starter.zip` with a product-ready docs and workflow structure.
+ModCase is a Reddit Developer Platform (Devvit Web) mod tool: it captures human approve/remove decisions via the `onModAction` trigger, stores privacy-conscious records in Redis, and surfaces team precedent (settled / leaning / contested) before a moderator acts.
 
 Start with:
 
-- `README.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DECISIONS.md`
-- `docs/LOCAL_DEV.md`
-- `HANDOFF.md`
+- `README.md` — product overview, architecture diagrams, demo flow
+- `docs/ARCHITECTURE.md` — module map and runtime flow
+- `docs/DECISIONS.md` — engineering decisions log
+- `docs/LOCAL_DEV.md` — local setup and playtest workflow
 
-Current high-priority task: run Devvit playtest, observe real `onModAction` payloads, tighten extraction helpers, then disable raw debug payload storage before submission.
+Conventions:
+
+- Keep the safety-relevant logic deterministic (`src/modcase/summary.ts`); keyword assists are opt-in and off by default.
+- Never store moderator or author names; keep reports aggregate and team-level; no automatic enforcement.
+- Run `npm run check` (config verify + strict `tsc` + Vitest) before considering work complete.
